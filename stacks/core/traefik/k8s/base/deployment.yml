@@ -1,0 +1,57 @@
+# Note: In K3s, Traefik is installed by default as the ingress controller.
+# This manifest is provided for custom Traefik configuration or for
+# non-K3s Kubernetes clusters. If using K3s default Traefik, you can
+# customize it via HelmChartConfig instead.
+#
+# To disable default Traefik in K3s and use this instead:
+#   k3s server --disable=traefik
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traefik
+  namespace: traefik
+  labels:
+    app: traefik
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: traefik
+  template:
+    metadata:
+      labels:
+        app: traefik
+    spec:
+      serviceAccountName: traefik
+      containers:
+        - name: traefik
+          image: traefik:v3.6
+          ports:
+            - name: web
+              containerPort: 80
+            - name: websecure
+              containerPort: 443
+          volumeMounts:
+            - name: traefik-config
+              mountPath: /etc/traefik/traefik.yml
+              subPath: traefik.yml
+              readOnly: true
+            - name: dynamic-config
+              mountPath: /etc/traefik/dynamic
+              readOnly: true
+            - name: acme-data
+              mountPath: /etc/traefik/acme
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+      volumes:
+        - name: traefik-config
+          configMap:
+            name: traefik-config
+        - name: dynamic-config
+          configMap:
+            name: traefik-dynamic
+        - name: acme-data
+          persistentVolumeClaim:
+            claimName: traefik-acme

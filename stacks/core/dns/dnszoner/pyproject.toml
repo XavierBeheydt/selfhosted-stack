@@ -1,0 +1,49 @@
+[project]
+name = "dnszoner"
+version = "0.2.0"
+description = "Dynamic DNS zone generator for container environments. Discovers services via container labels and generates CoreDNS zone files."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.32.0",
+    "requests-unixsocket2>=0.4.0",
+]
+
+[project.scripts]
+dnszoner = "dnszoner.main:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "pytest-mock>=3.15.1",
+    "pytest-asyncio>=0.25.0",
+    "ruff>=0.15.1",
+]
+
+[tool.pytest.ini_options]
+addopts = "-ra -q --cov=dnszoner --cov-report=term-missing"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+asyncio_mode = "auto"
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+exclude = [
+    ".venv", "venv", "__pycache__", "build", "dist",
+    "*.egg-info", ".pytest_cache", ".ruff_cache",
+]
+line-length = 80
+indent-width = 4
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true

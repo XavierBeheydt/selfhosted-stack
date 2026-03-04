@@ -1,0 +1,42 @@
+# Deploy Inventory
+# List of servers and which stacks to deploy on each.
+#
+# Format: name, host, user, stacks to deploy
+# Stack paths are relative to stacks/ directory.
+
+servers:
+  # Primary VPS - runs all public-facing services
+  vps:
+    host: "${VPS_HOST}"
+    user: deploy
+    port: 22
+    deploy_path: /opt/selfhosted-stack
+    stacks:
+      - core/traefik
+      - core/dns
+      - core/wireguard
+      - business/dolibarr
+      # Phase 2:
+      # - business/n8n
+      # - business/postiz
+      # Phase 3 (non-GPU):
+      # - search/searxng
+
+  # Local machine (Archlinux + RTX 4090) - runs GPU-heavy workloads
+  # Accessible via WireGuard from VPS
+  # Uncomment and configure when ready
+  # local:
+  #   host: "${LOCAL_HOST}"
+  #   user: deploy
+  #   port: 22
+  #   deploy_path: /opt/selfhosted-stack
+  #   stacks:
+  #     - core/dns
+  #     # Phase 3 (GPU):
+  #     # - ai/ollama
+  #     # - ai/open-webui
+  #     # - ai/tts
+  #     # - ai/stt
+  #     # Phase 4:
+  #     # - storage/immich
+  #     # - storage/seafile

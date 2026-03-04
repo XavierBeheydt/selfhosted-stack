@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dolibarr-db
+  namespace: dolibarr
+  labels:
+    app: dolibarr-db
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: dolibarr-db
+  template:
+    metadata:
+      labels:
+        app: dolibarr-db
+    spec:
+      containers:
+        - name: mariadb
+          image: mariadb:lts
+          args:
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+          env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dolibarr-secret
+                  key: DOLI_DB_ROOT_PASSWORD
+            - name: MARIADB_DATABASE
+              value: dolidb
+            - name: MARIADB_USER
+              value: dolidbuser
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dolibarr-secret
+                  key: DOLI_DB_PASSWORD
+          ports:
+            - name: mysql
+              containerPort: 3306
+          livenessProbe:
+            exec:
+              command:
+                - healthcheck.sh
+                - --connect
+                - --innodb_initialized
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command:
+                - healthcheck.sh
+                - --connect
+                - --innodb_initialized
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/mysql
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: dolibarr-db-data

@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: wg-easy-udp
+  namespace: wireguard
+spec:
+  type: NodePort
+  selector:
+    app: wg-easy
+  ports:
+    - name: wireguard
+      port: 51820
+      targetPort: wireguard
+      nodePort: 31820
+      protocol: UDP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wg-easy-ui
+  namespace: wireguard
+spec:
+  type: ClusterIP
+  selector:
+    app: wg-easy
+  ports:
+    - name: web-ui
+      port: 51821
+      targetPort: web-ui
+
+---
+# IngressRoute for wg-easy web UI via Traefik
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: wg-easy-ui
+  namespace: wireguard
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`vpn.example.com`)  # Override via Kustomize
+      kind: Rule
+      services:
+        - name: wg-easy-ui
+          port: 51821
+  tls:
+    certResolver: letsencrypt

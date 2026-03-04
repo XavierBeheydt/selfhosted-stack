@@ -1,0 +1,16 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: dolibarr
+  namespace: dolibarr
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`erp.example.com`)  # Override via Kustomize
+      kind: Rule
+      services:
+        - name: dolibarr-web
+          port: 80
+  tls:
+    certResolver: letsencrypt

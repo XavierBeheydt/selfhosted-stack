@@ -1,0 +1,98 @@
+# WireGuard VPN Gateway (wg-easy)
+#
+# This provides VPN access for personal devices. For K3s inter-node
+# communication, use --flannel-backend=wireguard-native on the K3s server
+# instead of this deployment.
+#
+# Requires NET_ADMIN and SYS_MODULE capabilities + host networking
+# for proper WireGuard tunnel operation.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wg-easy
+  namespace: wireguard
+  labels:
+    app: wg-easy
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # WireGuard binds to a port, can't have two instances
+  selector:
+    matchLabels:
+      app: wg-easy
+  template:
+    metadata:
+      labels:
+        app: wg-easy
+    spec:
+      # Pin to VPS node (WireGuard gateway should be on the public-facing server)
+      nodeSelector:
+        node-role.kubernetes.io/master: "true"  # Override via Kustomize
+      containers:
+        - name: wg-easy
+          image: ghcr.io/wg-easy/wg-easy:latest
+          securityContext:
+            capabilities:
+              add:
+                - NET_ADMIN
+                - SYS_MODULE
+          env:
+            - name: LANG
+              value: en
+            - name: WG_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: wg-easy-secret
+                  key: WG_HOST
+            - name: PASSWORD_HASH
+              valueFrom:
+                secretKeyRef:
+                  name: wg-easy-secret
+                  key: PASSWORD_HASH
+            - name: WG_PORT
+              value: "51820"
+            - name: WG_DEFAULT_DNS
+              value: "10.13.13.1"
+            - name: WG_DEFAULT_ADDRESS
+              value: "10.13.13.x"
+            - name: WG_ALLOWED_IPS
+              value: "10.13.13.0/24, 10.42.0.0/16, 10.43.0.0/16"
+            - name: UI_TRAFFIC_STATS
+              value: "true"
+            - name: UI_CHART_TYPE
+              value: "2"
+          ports:
+            - name: wireguard
+              containerPort: 51820
+              protocol: UDP
+            - name: web-ui
+              containerPort: 51821
+              protocol: TCP
+          volumeMounts:
+            - name: wg-data
+              mountPath: /etc/wireguard
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+      volumes:
+        - name: wg-data
+          persistentVolumeClaim:
+            claimName: wg-data
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: wg-data
+  namespace: wireguard
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Mi

@@ -1,0 +1,77 @@
+# =============================================================================
+# Dolibarr - ERP/CRM
+# =============================================================================
+
+name: dolibarr
+
+services:
+  db:
+    image: mariadb:lts
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DOLI_DB_ROOT_PASSWORD:?required}
+      MARIADB_DATABASE: ${DOLI_DB_NAME:-dolidb}
+      MARIADB_USER: ${DOLI_DB_USER:-dolidbuser}
+      MARIADB_PASSWORD: ${DOLI_DB_PASSWORD:?required}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - backend
+    labels:
+      - traefik.enable=false
+
+  web:
+    image: dolibarr/dolibarr:${DOLI_TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DOLI_INSTALL_AUTO: ${DOLI_INSTALL_AUTO:-1}
+      DOLI_INIT_DEMO: ${DOLI_INIT_DEMO:-0}
+      DOLI_DB_HOST: db
+      DOLI_DB_NAME: ${DOLI_DB_NAME:-dolidb}
+      DOLI_DB_USER: ${DOLI_DB_USER:-dolidbuser}
+      DOLI_DB_PASSWORD: ${DOLI_DB_PASSWORD:?required}
+      DOLI_ADMIN_LOGIN: ${DOLI_ADMIN_LOGIN:-admin}
+      DOLI_ADMIN_PASSWORD: ${DOLI_ADMIN_PASSWORD:?required}
+      DOLI_URL_ROOT: ${DOLI_URL_ROOT:-https://erp.localhost}
+      DOLI_CRON: ${DOLI_CRON:-0}
+      DOLI_CRON_KEY: ${DOLI_CRON_KEY:-changeme}
+      DOLI_COMPANY_NAME: ${DOLI_COMPANY_NAME:-MyCompany}
+      WWW_USER_ID: ${WWW_USER_ID:-1000}
+      WWW_GROUP_ID: ${WWW_GROUP_ID:-1000}
+      PHP_INI_DATE_TIMEZONE: ${TZ:-Europe/Paris}
+    volumes:
+      - documents:/var/www/documents
+      - custom:/var/www/html/custom
+    networks:
+      - proxy-frontend
+      - backend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dolibarr.rule=Host(`${DOLI_DOMAIN:-erp.localhost}`)
+      - traefik.http.routers.dolibarr.entrypoints=websecure
+      - traefik.http.routers.dolibarr.tls.certresolver=letsencrypt
+      - dnszoner.enable=true
+      - dnszoner.domain=${DOLI_DOMAIN:-erp.localhost}
+
+volumes:
+  db-data:
+  documents:
+  custom:
+
+networks:
+  proxy-frontend:
+    external: true
+  backend:
+    driver: bridge

@@ -1,0 +1,52 @@
+# =============================================================================
+# WireGuard - VPN Gateway (wg-easy)
+# =============================================================================
+# Provides VPN access for personal devices (phone, laptop) to the private
+# network. For K3s inter-node communication, use --flannel-backend=wireguard-native.
+
+name: wireguard
+
+services:
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy:latest
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
+    environment:
+      LANG: en
+      WG_HOST: ${WG_HOST:?WG_HOST is required}
+      PASSWORD_HASH: ${WG_PASSWORD_HASH:?WG_PASSWORD_HASH is required}
+      WG_PORT: ${WG_PORT:-51820}
+      WG_DEFAULT_DNS: ${WG_DEFAULT_DNS:-10.13.13.1}
+      WG_DEFAULT_ADDRESS: ${WG_DEFAULT_ADDRESS:-10.13.13.x}
+      WG_ALLOWED_IPS: ${WG_ALLOWED_IPS:-10.13.13.0/24, 10.42.0.0/16, 10.43.0.0/16}
+      # 10.42.0.0/16 = K3s pod CIDR
+      # 10.43.0.0/16 = K3s service CIDR
+      UI_TRAFFIC_STATS: "true"
+      UI_CHART_TYPE: "2"
+    volumes:
+      - wg-data:/etc/wireguard
+    ports:
+      - "${WG_PORT:-51820}:51820/udp"
+      - "51821:51821/tcp"  # Web UI
+    networks:
+      - proxy-frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.wireguard.rule=Host(`vpn.${BASE_DOMAIN:-localhost}`)
+      - traefik.http.routers.wireguard.entrypoints=websecure
+      - traefik.http.routers.wireguard.tls.certresolver=letsencrypt
+      - traefik.http.services.wireguard.loadbalancer.server.port=51821
+      - dnszoner.enable=true
+      - dnszoner.domain=vpn.${BASE_DOMAIN:-localhost}
+
+volumes:
+  wg-data:
+
+networks:
+  proxy-frontend:
+    external: true

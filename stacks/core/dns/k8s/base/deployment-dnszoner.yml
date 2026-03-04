@@ -1,0 +1,73 @@
+# DNSZoner generates zone files by discovering services via the Kubernetes API.
+# In a K8s environment, DNSZoner should watch Service/Ingress resources
+# rather than container labels. This deployment is provided as a starting point.
+#
+# For K3s clusters, you may prefer to use the built-in CoreDNS with
+# ExternalDNS or a custom controller instead of DNSZoner.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dnszoner
+  namespace: dns
+  labels:
+    app: dnszoner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dnszoner
+  template:
+    metadata:
+      labels:
+        app: dnszoner
+    spec:
+      containers:
+        - name: dnszoner
+          image: localhost/dnszoner:latest
+          env:
+            - name: DNSZONER_ZONE_DIR
+              value: /etc/coredns/zones
+            - name: DNSZONER_BASE_DOMAIN
+              valueFrom:
+                configMapKeyRef:
+                  name: dnszoner-config
+                  key: BASE_DOMAIN
+            - name: DNSZONER_REFRESH_INTERVAL
+              value: "5"
+            - name: DNSZONER_HOST
+              value: "0.0.0.0"
+            - name: DNSZONER_PORT
+              value: "8080"
+          ports:
+            - name: health
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: zones
+              mountPath: /etc/coredns/zones
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      volumes:
+        - name: zones
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dnszoner-config
+  namespace: dns
+data:
+  BASE_DOMAIN: example.com  # Override via Kustomize

@@ -1,0 +1,28 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dolibarr-db
+  namespace: dolibarr
+spec:
+  type: ClusterIP
+  selector:
+    app: dolibarr-db
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: mysql
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dolibarr-web
+  namespace: dolibarr
+spec:
+  type: ClusterIP
+  selector:
+    app: dolibarr-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

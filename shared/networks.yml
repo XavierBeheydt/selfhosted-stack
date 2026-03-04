@@ -1,0 +1,19 @@
+# =============================================================================
+# Shared Docker Networks
+# =============================================================================
+# This file defines the shared external network used by all stacks.
+# Create it before starting any stack:
+#
+#   docker network create proxy-frontend
+#   # or
+#   podman network create proxy-frontend
+#
+# Stacks reference this network as:
+#   networks:
+#     proxy-frontend:
+#       external: true
+
+networks:
+  proxy-frontend:
+    driver: bridge
+    name: proxy-frontend

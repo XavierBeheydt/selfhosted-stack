@@ -1,0 +1,181 @@
+# CD Pipeline - Deploy to servers after CI passes
+#
+# Required GitHub Secrets:
+#   VPS_HOST          - VPS hostname or IP
+#   DEPLOY_SSH_KEY    - SSH private key for deploy user
+#   SSH_PORT          - SSH port (optional, default: 22)
+#
+# Optional secrets for multi-server:
+#   LOCAL_HOST        - Local machine hostname (via WireGuard)
+#   LOCAL_SSH_KEY     - SSH key for local machine
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deploy target (vps, local, all)"
+        required: true
+        default: "vps"
+        type: choice
+        options:
+          - vps
+          - local
+          - all
+      stacks:
+        description: "Stacks to deploy (space-separated, empty = all)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+# Only one deploy at a time
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # --- Run CI first ---
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  # --- Deploy to VPS ---
+  deploy-vps:
+    name: Deploy to VPS
+    needs: ci
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.target == 'vps' || github.event.inputs.target == 'all'))
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+
+            DEPLOY_PATH="/opt/selfhosted-stack"
+            BRANCH="main"
+            REPO="git@github.com:${{ github.repository }}.git"
+
+            cd "${DEPLOY_PATH}" || { mkdir -p "${DEPLOY_PATH}" && cd "${DEPLOY_PATH}"; }
+
+            # Clone or update
+            if [ -d .git ]; then
+              git fetch origin
+              git checkout ${BRANCH}
+              git reset --hard origin/${BRANCH}
+              git clean -fd
+            else
+              git clone --branch ${BRANCH} "${REPO}" .
+            fi
+
+            # Detect container engine
+            if command -v podman &>/dev/null; then
+              ENGINE="podman"
+            else
+              ENGINE="docker"
+            fi
+
+            # Ensure shared network
+            ${ENGINE} network create proxy-frontend 2>/dev/null || true
+
+            # Determine stacks to deploy
+            STACKS="${{ github.event.inputs.stacks }}"
+            if [ -z "${STACKS}" ]; then
+              STACKS="core/traefik core/dns core/wireguard business/dolibarr"
+            fi
+
+            for stack in ${STACKS}; do
+              compose_file="stacks/${stack}/compose.yml"
+              if [ -f "${compose_file}" ]; then
+                echo "Deploying ${stack}..."
+                ${ENGINE} compose -f "${compose_file}" pull 2>/dev/null || true
+                ${ENGINE} compose -f "${compose_file}" up -d --remove-orphans
+                echo "${stack} deployed"
+              else
+                echo "WARNING: ${compose_file} not found, skipping"
+              fi
+            done
+
+            echo "VPS deployment complete"
+
+  # --- Deploy to Local Machine (via WireGuard) ---
+  deploy-local:
+    name: Deploy to Local
+    needs: ci
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.target == 'local' || github.event.inputs.target == 'all')
+    environment: local
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Local Machine
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.LOCAL_HOST }}
+          username: deploy
+          key: ${{ secrets.LOCAL_SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+
+            DEPLOY_PATH="/opt/selfhosted-stack"
+            BRANCH="main"
+            REPO="git@github.com:${{ github.repository }}.git"
+
+            cd "${DEPLOY_PATH}" || { mkdir -p "${DEPLOY_PATH}" && cd "${DEPLOY_PATH}"; }
+
+            if [ -d .git ]; then
+              git fetch origin
+              git checkout ${BRANCH}
+              git reset --hard origin/${BRANCH}
+              git clean -fd
+            else
+              git clone --branch ${BRANCH} "${REPO}" .
+            fi
+
+            # Detect container engine
+            if command -v podman &>/dev/null; then
+              ENGINE="podman"
+            else
+              ENGINE="docker"
+            fi
+
+            ${ENGINE} network create proxy-frontend 2>/dev/null || true
+
+            STACKS="${{ github.event.inputs.stacks }}"
+            if [ -z "${STACKS}" ]; then
+              STACKS="core/dns"
+            fi
+
+            for stack in ${STACKS}; do
+              compose_file="stacks/${stack}/compose.yml"
+              if [ -f "${compose_file}" ]; then
+                echo "Deploying ${stack}..."
+                ${ENGINE} compose -f "${compose_file}" pull 2>/dev/null || true
+                ${ENGINE} compose -f "${compose_file}" up -d --remove-orphans
+                echo "${stack} deployed"
+              fi
+            done
+
+            echo "Local deployment complete"

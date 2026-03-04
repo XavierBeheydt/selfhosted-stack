@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dolibarr-web
+  namespace: dolibarr
+  labels:
+    app: dolibarr-web
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: dolibarr-web
+  template:
+    metadata:
+      labels:
+        app: dolibarr-web
+    spec:
+      initContainers:
+        - name: wait-for-db
+          image: busybox:stable
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z dolibarr-db 3306; do
+                echo "Waiting for MariaDB..."
+                sleep 2
+              done
+      containers:
+        - name: dolibarr
+          image: dolibarr/dolibarr:latest
+          env:
+            - name: DOLI_INSTALL_AUTO
+              value: "1"
+            - name: DOLI_INIT_DEMO
+              value: "0"
+            - name: DOLI_DB_HOST
+              value: dolibarr-db
+            - name: DOLI_DB_NAME
+              value: dolidb
+            - name: DOLI_DB_USER
+              value: dolidbuser
+            - name: DOLI_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dolibarr-secret
+                  key: DOLI_DB_PASSWORD
+            - name: DOLI_ADMIN_LOGIN
+              value: admin
+            - name: DOLI_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dolibarr-secret
+                  key: DOLI_ADMIN_PASSWORD
+            - name: DOLI_URL_ROOT
+              value: https://erp.example.com  # Override via Kustomize
+            - name: DOLI_CRON
+              value: "0"
+            - name: DOLI_CRON_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: dolibarr-secret
+                  key: DOLI_CRON_KEY
+            - name: PHP_INI_DATE_TIMEZONE
+              value: Europe/Paris
+          ports:
+            - name: http
+              containerPort: 80
+          volumeMounts:
+            - name: documents
+              mountPath: /var/www/documents
+            - name: custom
+              mountPath: /var/www/html/custom
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: documents
+          persistentVolumeClaim:
+            claimName: dolibarr-documents
+        - name: custom
+          persistentVolumeClaim:
+            claimName: dolibarr-custom

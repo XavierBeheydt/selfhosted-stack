@@ -1,0 +1,122 @@
+# CI Pipeline - Runs tests, linting, and validation on every push/PR
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  # --- DNSZoner Python Tests ---
+  dnszoner-test:
+    name: DNSZoner Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: stacks/core/dns/dnszoner
+
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run linter (ruff)
+        run: uv run ruff check src/ tests/
+
+      - name: Check formatting (ruff)
+        run: uv run ruff format --check src/ tests/
+
+      - name: Run tests with coverage
+        run: uv run pytest
+
+  # --- Compose file validation ---
+  compose-lint:
+    name: Validate Compose Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate traefik compose
+        run: docker compose -f stacks/core/traefik/compose.yml config --quiet
+        env:
+          CONTAINER_ENGINE_SOCKET: /var/run/docker.sock
+          BASE_DOMAIN: localhost
+          TRAEFIK_DASHBOARD_AUTH: "admin:test"
+
+      - name: Validate dns compose
+        run: docker compose -f stacks/core/dns/compose.yml config --quiet
+        env:
+          CONTAINER_ENGINE_SOCKET: /var/run/docker.sock
+          BASE_DOMAIN: localhost
+
+      - name: Validate wireguard compose
+        run: docker compose -f stacks/core/wireguard/compose.yml config --quiet
+        env:
+          WG_HOST: vpn.localhost
+          WG_PASSWORD_HASH: "test"
+          BASE_DOMAIN: localhost
+
+      - name: Validate dolibarr compose
+        run: docker compose -f stacks/business/dolibarr/compose.yml config --quiet
+        env:
+          DOLI_DB_ROOT_PASSWORD: test
+          DOLI_DB_PASSWORD: test
+          DOLI_ADMIN_PASSWORD: test
+          DOLI_DOMAIN: erp.localhost
+          BASE_DOMAIN: localhost
+
+  # --- Kubernetes manifest validation ---
+  k8s-lint:
+    name: Validate Kubernetes Manifests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Validate traefik manifests
+        run: kubectl kustomize stacks/core/traefik/k8s/base/ > /dev/null
+
+      - name: Validate dns manifests
+        run: kubectl kustomize stacks/core/dns/k8s/base/ > /dev/null
+
+      - name: Validate wireguard manifests
+        run: kubectl kustomize stacks/core/wireguard/k8s/base/ > /dev/null
+
+      - name: Validate dolibarr manifests
+        run: kubectl kustomize stacks/business/dolibarr/k8s/base/ > /dev/null
+
+  # --- Shell script linting ---
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: .
+          severity: warning
