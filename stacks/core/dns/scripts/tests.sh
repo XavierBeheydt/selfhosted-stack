@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Copyright © 2026 Xavier Beheydt <xavier.beheydt@gmail.com> - All Rights Reserved
 
 set -euo pipefail
@@ -25,7 +26,7 @@ echo -e "Running dns service tests...\n"
 
 echo "Coredns - Check DNSSEC Settings"
 if drill @${DNS_HOST} -p ${DNS_PORT} sigfail.verteiltesysteme.net 2>&1 | grep -q "rcode: SERVFAIL"; then
-	ok "rcode: SERVFAIL found"
+  ok "rcode: SERVFAIL found"
 else
-	fail "expected 'rcode: SERVFAIL' but it was not found"
+  fail "expected 'rcode: SERVFAIL' but it was not found"
 fi

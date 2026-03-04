@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+# Copyright © 2026 Xavier Beheydt <xavier.beheydt@gmail.com> - All Rights Reserved
+
 """Format Markdown tables across a repository.
 
 This script finds Markdown tables (pipe-delimited) outside fenced code

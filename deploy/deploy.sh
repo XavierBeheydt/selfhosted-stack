@@ -1,6 +1,7 @@
+#!/usr/bin/env bash
+
 # Copyright © 2026 Xavier Beheydt <xavier.beheydt@gmail.com> - All Rights Reserved
 
-#!/usr/bin/env bash
 # deploy.sh - Deploy stacks to remote servers via SSH
 #
 # Usage:
@@ -31,20 +32,20 @@ REPO_URL="${REPO_URL:-git@github.com:XavierBeheydt/selfhosted-stack.git}"
 # SSH options
 SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -p ${SSH_PORT}"
 if [[ -n "${SSH_KEY_PATH:-}" ]]; then
-    SSH_OPTS="${SSH_OPTS} -i ${SSH_KEY_PATH}"
+  SSH_OPTS="${SSH_OPTS} -i ${SSH_KEY_PATH}"
 fi
 
 ssh_cmd() {
-    ssh ${SSH_OPTS} "${USER}@${HOST}" "$@"
+  ssh ${SSH_OPTS} "${USER}@${HOST}" "$@"
 }
 
 log() {
-    printf "[deploy] %s\n" "$*"
+  printf "[deploy] %s\n" "$*"
 }
 
 err() {
-    printf "[deploy] ERROR: %s\n" "$*" >&2
-    exit 1
+  printf "[deploy] ERROR: %s\n" "$*" >&2
+  exit 1
 }
 
 # --- Pre-flight checks ---
