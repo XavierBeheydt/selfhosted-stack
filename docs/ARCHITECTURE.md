@@ -22,7 +22,7 @@ selfhosted-stack is a modular, multi-node infrastructure designed for small busi
                            │
               ┌────────────┼────────────────┐
               │            │                │
-        ┌─────┴─────┐ ┌───┴────┐   ┌───────┴──────┐
+        ┌─────┴──────┐ ┌───┴────┐   ┌───────┴──────┐
         │  CoreDNS   │ │ wg-easy│   │   Dolibarr   │
         │ + DNSZoner │ │  (VPN) │   │  (ERP/CRM)   │
         └────────────┘ └───┬────┘   └──────────────┘
@@ -32,12 +32,12 @@ selfhosted-stack is a modular, multi-node infrastructure designed for small busi
                            │
               ┌────────────┼────────────────┐
               │            │                │
-        ┌─────┴─────┐ ┌───┴────┐   ┌───────┴──────┐
-        │  Ollama    │ │Open    │   │   Immich /    │
-        │  (GPU)     │ │WebUI   │   │   Seafile     │
+        ┌─────┴──────┐ ┌───┴────┐   ┌───────┴──────┐
+        │  Ollama    │ │Open    │   │   Immich /   │
+        │  (GPU)     │ │WebUI   │   │   Seafile    │
         └────────────┘ └────────┘   └──────────────┘
 
-        └───────── Local PC (RTX 4090) ─────────────┘
+        └───────── Local PC (RTX 4090) ────────────┘
 ```
 
 ## Deployment Modes
@@ -67,41 +67,44 @@ kubectl apply -k stacks/core/traefik/k8s/base/
 
 ### Core (`stacks/core/`)
 
-| Stack     | Purpose                           | Port(s)         |
-|-----------|-----------------------------------|-----------------|
-| traefik   | Reverse proxy, TLS termination    | 80, 443         |
-| dns       | CoreDNS + DNSZoner (zone gen)     | 53 TCP/UDP      |
-| wireguard | VPN gateway for personal devices  | 51820 UDP       |
+| Stack     | Purpose                          | Port(s)    |
+| :-------- | :------------------------------- | :--------- |
+| traefik   | Reverse proxy, TLS termination   | 80, 443    |
+| dns       | CoreDNS + DNSZoner (zone gen)    | 53 TCP/UDP |
+| wireguard | VPN gateway for personal devices | 51820 UDP  |
 
 ### Business (`stacks/business/`)
 
-| Stack    | Purpose                          |
-|----------|----------------------------------|
-| dolibarr | ERP/CRM with MariaDB             |
-| n8n      | Workflow automation (Phase 2)    |
-| postiz   | Social media management (Phase 2)|
+| Stack    | Purpose                           |
+| :------- | :-------------------------------- |
+| dolibarr | ERP/CRM with MariaDB              |
+| n8n      | Workflow automation (Phase 2)     |
+| postiz   | Social media management (Phase 2) |
 
 ### AI (`stacks/ai/`)
 
-| Stack     | Purpose                          | Node  |
-|-----------|----------------------------------|-------|
-| ollama    | LLM inference (GPU)              | local |
-| open-webui| Chat UI with RAG, MCP, memory    | local |
-| tts       | Piper (fast) + XTTS-v2 (clone)  | local |
-| stt       | Faster-Whisper                   | local |
+| Stack      | Purpose                               | Node      |
+| :--------- | :------------------------------------ | :-------- |
+| ollama     | LLM inference (GPU)                   | local     |
+| open-webui | Chat UI with RAG, MCP, memory (teams) | local     |
+| openclaw   | Personal AI agent gateway (always-on) | vps       |
+| tts        | Piper (fast) + XTTS-v2 (clone)       | local     |
+| stt        | Faster-Whisper                        | local     |
+
+**Open WebUI vs OpenClaw**: Open WebUI is a web-based chat UI for teams and casual users (RAG, document upload, multi-user). OpenClaw is a personal AI agent that lives in your messaging apps (WhatsApp, Telegram, Slack, etc.) and can autonomously execute tasks. They are complementary — both connect to the same Ollama instance.
 
 ### Search (`stacks/search/`)
 
-| Stack   | Purpose                          |
-|---------|----------------------------------|
-| searxng  | Meta search engine              |
+| Stack   | Purpose            |
+| :------ | :----------------- |
+| searxng | Meta search engine |
 
 ### Storage (`stacks/storage/`)
 
-| Stack   | Purpose                          |
-|---------|----------------------------------|
-| seafile  | Cloud file storage              |
-| immich   | Photo/video management          |
+| Stack   | Purpose                |
+| :------ | :--------------------- |
+| seafile | Cloud file storage     |
+| immich  | Photo/video management |
 
 ## Container Engine Agnostic
 

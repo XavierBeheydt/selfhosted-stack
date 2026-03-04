@@ -90,3 +90,6 @@ charts/*/tmpcharts/
 # Docker/Podman
 *.tar
 *.gz
+
+# Session files (editor/AI)
+session-*.md

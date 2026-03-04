@@ -21,18 +21,18 @@ K3s deployment).
 │  VPS (Ubuntu)                   │     │  Local PC (Archlinux + GPU)      │
 │  K3s Server Node                │     │  K3s Agent Node                  │
 │                                 │     │                                  │
-│  ┌─────────┐  ┌──────────────┐  │     │  ┌───────────┐  ┌────────────┐  │
-│  │ Traefik │  │ CoreDNS      │  │     │  │ Traefik   │  │ CoreDNS    │  │
-│  │         │  │ + DNSZoner   │  │     │  │ (local)   │  │ (local)    │  │
-│  └─────────┘  └──────────────┘  │     │  └───────────┘  └────────────┘  │
-│  ┌─────────┐  ┌──────────────┐  │     │  ┌───────────┐  ┌────────────┐  │
-│  │Dolibarr │  │ n8n          │  │     │  │ Open      │  │ Ollama     │  │
-│  │+ MariaDB│  │ + Postgres   │  │     │  │ WebUI     │  │ (GPU)      │  │
-│  └─────────┘  └──────────────┘  │     │  └───────────┘  └────────────┘  │
-│  ┌─────────┐  ┌──────────────┐  │     │  ┌───────────┐  ┌────────────┐  │
-│  │ Postiz  │  │ SearXNG      │  │     │  │ TTS/STT   │  │ SearXNG    │  │
-│  │ (social)│  │ (search)     │  │     │  │ (GPU)     │  │ (optional) │  │
-│  └─────────┘  └──────────────┘  │     │  └───────────┘  └────────────┘  │
+│  ┌─────────┐  ┌──────────────┐  │     │  ┌───────────┐  ┌────────────┐   │
+│  │ Traefik │  │ CoreDNS      │  │     │  │ Traefik   │  │ CoreDNS    │   │
+│  │         │  │ + DNSZoner   │  │     │  │ (local)   │  │ (local)    │   │
+│  └─────────┘  └──────────────┘  │     │  └───────────┘  └────────────┘   │
+│  ┌─────────┐  ┌──────────────┐  │     │  ┌───────────┐  ┌────────────┐   │
+│  │Dolibarr │  │ n8n          │  │     │  │ Open      │  │ Ollama     │   │
+│  │+ MariaDB│  │ + Postgres   │  │     │  │ WebUI     │  │ (GPU)      │   │
+│  └─────────┘  └──────────────┘  │     │  └───────────┘  └────────────┘   │
+│  ┌─────────┐  ┌──────────────┐  │     │  ┌───────────┐  ┌────────────┐   │
+│  │ Postiz  │  │ SearXNG      │  │     │  │ TTS/STT   │  │ SearXNG    │   │
+│  │ (social)│  │ (search)     │  │     │  │ (GPU)     │  │ (optional) │   │
+│  └─────────┘  └──────────────┘  │     │  └───────────┘  └────────────┘   │
 │  ┌─────────┐  ┌──────────────┐  │     │                                  │
 │  │ Seafile │  │ Immich       │  │     │  GPU services are accessible     │
 │  │ (files) │  │ (photos)     │  │     │  locally without VPN hairpin     │
@@ -49,46 +49,47 @@ K3s deployment).
 
 ### Network Layers
 
-| Layer | Purpose | Technology |
-|-------|---------|------------|
-| **Cluster mesh** | Pod-to-pod across nodes | K3s Flannel + WireGuard native |
-| **Device VPN** | iPhone, laptop access to private services | wg-easy (standalone WireGuard) |
+| Layer              | Purpose                                   | Technology                            |
+| :----------------- | :---------------------------------------- | :------------------------------------ |
+| **Cluster mesh**   | Pod-to-pod across nodes                   | K3s Flannel + WireGuard native        |
+| **Device VPN**     | iPhone, laptop access to private services | wg-easy (standalone WireGuard)        |
 | **Public gateway** | Future: expose selected services publicly | Traefik Ingress + DNS + Let's Encrypt |
 
 ## Stacks
 
 ### Core Infrastructure
 
-| Stack | Description | Compose | K8s |
-|-------|-------------|:-------:|:---:|
-| [traefik](stacks/core/traefik/) | Reverse proxy with auto-TLS and service discovery | x | x |
-| [dns](stacks/core/dns/) | CoreDNS + DNSZoner for dynamic DNS zone management | x | x |
-| [wireguard](stacks/core/wireguard/) | VPN gateway for device access (wg-easy) | x | x |
+| Stack                               | Description                                        | Compose | K8s |
+| :---------------------------------- | :------------------------------------------------- | :-----: | :-: |
+| [traefik](stacks/core/traefik/)     | Reverse proxy with auto-TLS and service discovery  |    x    |  x  |
+| [dns](stacks/core/dns/)             | CoreDNS + DNSZoner for dynamic DNS zone management |    x    |  x  |
+| [wireguard](stacks/core/wireguard/) | VPN gateway for device access (wg-easy)            |    x    |  x  |
 
 ### Business Services
 
-| Stack | Description | Compose | K8s |
-|-------|-------------|:-------:|:---:|
-| [dolibarr](stacks/business/dolibarr/) | ERP/CRM with MariaDB | x | x |
-| [n8n](stacks/business/n8n/) | Low-code workflow automation with Postgres | - | - |
-| [postiz](stacks/business/postiz/) | AI-powered social media management (20+ channels) | - | - |
+| Stack                                 | Description                                       | Compose | K8s |
+| :------------------------------------ | :------------------------------------------------ | :-----: | :-: |
+| [dolibarr](stacks/business/dolibarr/) | ERP/CRM with MariaDB                              |    x    |  x  |
+| [n8n](stacks/business/n8n/)           | Low-code workflow automation with Postgres        |    -    |  -  |
+| [postiz](stacks/business/postiz/)     | AI-powered social media management (20+ channels) |    -    |  -  |
 
 ### AI & Machine Learning
 
-| Stack | Description | Compose | K8s |
-|-------|-------------|:-------:|:---:|
-| [open-webui](stacks/ai/open-webui/) | LLM chat with RAG, MCP, per-user memory | - | - |
-| [ollama](stacks/ai/ollama/) | Local LLM inference (GPU) | - | - |
-| [tts](stacks/ai/tts/) | Text-to-Speech: Piper (fast) + XTTS-v2 (quality) | - | - |
-| [stt](stacks/ai/stt/) | Speech-to-Text: Faster-Whisper | - | - |
+| Stack                               | Description                                       | Compose | K8s |
+| :---------------------------------- | :------------------------------------------------ | :-----: | :-: |
+| [open-webui](stacks/ai/open-webui/) | LLM chat UI with RAG, MCP, per-user memory        |    -    |  -  |
+| [openclaw](stacks/ai/openclaw/)     | Personal AI agent gateway (20+ messaging channels) |    -    |  -  |
+| [ollama](stacks/ai/ollama/)         | Local LLM inference (GPU)                         |    -    |  -  |
+| [tts](stacks/ai/tts/)               | Text-to-Speech: Piper (fast) + XTTS-v2 (quality)  |    -    |  -  |
+| [stt](stacks/ai/stt/)               | Speech-to-Text: Faster-Whisper                    |    -    |  -  |
 
 ### Search & Storage
 
-| Stack | Description | Compose | K8s |
-|-------|-------------|:-------:|:---:|
-| [searxng](stacks/search/searxng/) | Privacy-respecting meta search engine (70+ sources) | - | - |
-| [seafile](stacks/storage/seafile/) | Cloud file storage and sync (Google Drive alternative) | - | - |
-| [immich](stacks/storage/immich/) | Photo management with ML (Google Photos alternative) | - | - |
+| Stack                              | Description                                            | Compose | K8s |
+| :--------------------------------- | :----------------------------------------------------- | :-----: | :-: |
+| [searxng](stacks/search/searxng/)  | Privacy-respecting meta search engine (70+ sources)    |    -    |  -  |
+| [seafile](stacks/storage/seafile/) | Cloud file storage and sync (Google Drive alternative) |    -    |  -  |
+| [immich](stacks/storage/immich/)   | Photo management with ML (Google Photos alternative)   |    -    |  -  |
 
 > Stacks marked with `-` are planned for upcoming phases.
 
@@ -176,15 +177,16 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 This stack uses opinionated defaults, but alternatives are documented in each
 service README:
 
-| Category | Default | Alternatives |
-|----------|---------|-------------|
-| Automation | n8n | [Activepieces](https://www.activepieces.com/) (MIT license) |
-| LLM Chat | Open WebUI | [LibreChat](https://www.librechat.ai/) (MIT), [LobeChat](https://lobehub.com/) |
-| Cloud Storage | Seafile | [Nextcloud](https://nextcloud.com/) (full suite) |
-| Photos | Immich | [Ente](https://ente.io/) (E2E encrypted) |
-| Orchestration | K3s | Docker Swarm (simpler), Nomad |
-| Reverse Proxy | Traefik | [Caddy](https://caddyserver.com/) |
-| Social Media | Postiz | [Mixpost](https://mixpost.app/) (MIT Lite) |
+| Category      | Default    | Alternatives                                                                   |
+| :------------ | :--------- | :----------------------------------------------------------------------------- |
+| Automation    | n8n        | [Activepieces](https://www.activepieces.com/) (MIT license)                    |
+| LLM Chat UI   | Open WebUI | [LibreChat](https://www.librechat.ai/) (MIT), [LobeChat](https://lobehub.com/) |
+| AI Agent       | OpenClaw   | [Open WebUI](https://openwebui.com/) (chat-focused), [Jan](https://jan.ai/)    |
+| Cloud Storage | Seafile    | [Nextcloud](https://nextcloud.com/) (full suite)                               |
+| Photos        | Immich     | [Ente](https://ente.io/) (E2E encrypted)                                       |
+| Orchestration | K3s        | Docker Swarm (simpler), Nomad                                                  |
+| Reverse Proxy | Traefik    | [Caddy](https://caddyserver.com/)                                              |
+| Social Media  | Postiz     | [Mixpost](https://mixpost.app/) (MIT Lite)                                     |
 
 ## Contributing
 
