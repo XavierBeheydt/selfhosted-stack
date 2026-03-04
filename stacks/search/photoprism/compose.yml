@@ -1,0 +1,60 @@
+version: '3.8'
+name: photoprism
+
+services:
+  db:
+    image: mariadb:10.11
+    container_name: photoprism-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${PHOTOPRISM_DB_ROOT_PASSWORD:-changeme}
+      MYSQL_DATABASE: ${PHOTOPRISM_DB_NAME:-photoprism}
+      MYSQL_USER: ${PHOTOPRISM_DB_USER:-photoprism}
+      MYSQL_PASSWORD: ${PHOTOPRISM_DB_PASSWORD:-photoprism}
+    volumes:
+      - photoprism-db:/var/lib/mysql
+    networks:
+      - photoprism-internal
+
+  photoprism:
+    image: photoprism/photoprism:latest
+    container_name: photoprism
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PHOTOPRISM_ADMIN_PASSWORD: ${PHOTOPRISM_ADMIN_PASSWORD:-changeme}
+      PHOTOPRISM_DATABASE_DRIVER: mysql
+      PHOTOPRISM_DATABASE_HOST: db:3306
+      PHOTOPRISM_DATABASE_NAME: ${PHOTOPRISM_DB_NAME:-photoprism}
+      PHOTOPRISM_DATABASE_USER: ${PHOTOPRISM_DB_USER:-photoprism}
+      PHOTOPRISM_DATABASE_PASSWORD: ${PHOTOPRISM_DB_PASSWORD:-photoprism}
+      PHOTOPRISM_ORIGINALS_LIMIT: ${PHOTOPRISM_ORIGINALS_LIMIT:-0}
+    volumes:
+      - photoprism-originals:/photoprism/originals
+      - photoprism-storage:/photoprism/storage
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.photoprism.rule=Host(`${PHOTOPRISM_HOSTNAME:-photoprism.example.com}`)"
+      - "traefik.http.services.photoprism.loadbalancer.server.port=2342"
+      - "dnszoner.enable=true"
+      - "dnszoner.domain=${PHOTOPRISM_HOSTNAME:-photoprism.example.com}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:2342/ || exit 1"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+    networks:
+      - photoprism-internal
+      - proxy-frontend
+
+volumes:
+  photoprism-db:
+  photoprism-originals:
+  photoprism-storage:
+
+networks:
+  photoprism-internal:
+    driver: bridge
+  proxy-frontend:
+    external: true
