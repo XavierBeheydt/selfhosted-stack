@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litellm
+  namespace: litellm
+  labels:
+    app: litellm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: litellm
+  template:
+    metadata:
+      labels:
+        app: litellm
+    spec:
+      containers:
+        - name: litellm
+          image: ghcr.io/berriai/litellm-database:main-stable
+          args: ["--config", "/app/config.yaml", "--port", "4000"]
+          ports:
+            - containerPort: 4000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-secrets
+                  key: DATABASE_URL
+            - name: LITELLM_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: litellm-secrets
+                  key: LITELLM_MASTER_KEY
+            - name: STORE_MODEL_IN_DB
+              value: "True"
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.yaml
+              subPath: litellm_config.yaml
+              readOnly: true
+          livenessProbe:
+            httpGet:
+              path: /health/liveliness
+              port: 4000
+            initialDelaySeconds: 40
+            periodSeconds: 30
+            timeoutSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health/readiness
+              port: 4000
+            initialDelaySeconds: 40
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 250m
+            limits:
+              memory: 2Gi
+              cpu: "2"
+      volumes:
+        - name: config
+          configMap:
+            name: litellm-config

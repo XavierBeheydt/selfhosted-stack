@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: litellm-config
+  namespace: litellm
+data:
+  litellm_config.yaml: |
+    model_list:
+      - model_name: llama3
+        litellm_params:
+          model: ollama/llama3
+          api_base: http://ollama.ollama.svc.cluster.local:11434
+
+      - model_name: mistral
+        litellm_params:
+          model: ollama/mistral
+          api_base: http://ollama.ollama.svc.cluster.local:11434
+
+      - model_name: codellama
+        litellm_params:
+          model: ollama/codellama
+          api_base: http://ollama.ollama.svc.cluster.local:11434
+
+    litellm_settings:
+      drop_params: true
+      num_retries: 3
+      request_timeout: 120
+
+    general_settings:
+      master_key: os.environ/LITELLM_MASTER_KEY
+      database_url: os.environ/DATABASE_URL
