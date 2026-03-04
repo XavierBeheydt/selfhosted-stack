@@ -1,4 +1,4 @@
-# Copyright (c) 2026 Xavier Beheydt - All Rights Reserved
+# Copyright © 2026 Xavier Beheydt <xavier.beheydt@gmail.com> - All Rights Reserved
 
 """Basic smoke tests for dnszoner package."""
 

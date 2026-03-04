@@ -1,3 +1,5 @@
+# Copyright © 2026 Xavier Beheydt <xavier.beheydt@gmail.com> - All Rights Reserved
+
 #!/usr/bin/env bash
 # deploy.sh - Deploy stacks to remote servers via SSH
 #
