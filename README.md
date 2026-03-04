@@ -75,13 +75,13 @@ K3s deployment).
 
 ### AI & Machine Learning
 
-| Stack                               | Description                                       | Compose | K8s |
-| :---------------------------------- | :------------------------------------------------ | :-----: | :-: |
-| [open-webui](stacks/ai/open-webui/) | LLM chat UI with RAG, MCP, per-user memory        |    -    |  -  |
+| Stack                               | Description                                        | Compose | K8s |
+| :---------------------------------- | :------------------------------------------------- | :-----: | :-: |
+| [open-webui](stacks/ai/open-webui/) | LLM chat UI with RAG, MCP, per-user memory         |    -    |  -  |
 | [openclaw](stacks/ai/openclaw/)     | Personal AI agent gateway (20+ messaging channels) |    -    |  -  |
-| [ollama](stacks/ai/ollama/)         | Local LLM inference (GPU)                         |    -    |  -  |
-| [tts](stacks/ai/tts/)               | Text-to-Speech: Piper (fast) + XTTS-v2 (quality)  |    -    |  -  |
-| [stt](stacks/ai/stt/)               | Speech-to-Text: Faster-Whisper                    |    -    |  -  |
+| [ollama](stacks/ai/ollama/)         | Local LLM inference (GPU)                          |    -    |  -  |
+| [tts](stacks/ai/tts/)               | Text-to-Speech: Piper (fast) + XTTS-v2 (quality)   |    -    |  -  |
+| [stt](stacks/ai/stt/)               | Speech-to-Text: Faster-Whisper                     |    -    |  -  |
 
 ### Search & Storage
 
@@ -181,7 +181,7 @@ service README:
 | :------------ | :--------- | :----------------------------------------------------------------------------- |
 | Automation    | n8n        | [Activepieces](https://www.activepieces.com/) (MIT license)                    |
 | LLM Chat UI   | Open WebUI | [LibreChat](https://www.librechat.ai/) (MIT), [LobeChat](https://lobehub.com/) |
-| AI Agent       | OpenClaw   | [Open WebUI](https://openwebui.com/) (chat-focused), [Jan](https://jan.ai/)    |
+| AI Agent      | OpenClaw   | [Open WebUI](https://openwebui.com/) (chat-focused), [Jan](https://jan.ai/)    |
 | Cloud Storage | Seafile    | [Nextcloud](https://nextcloud.com/) (full suite)                               |
 | Photos        | Immich     | [Ente](https://ente.io/) (E2E encrypted)                                       |
 | Orchestration | K3s        | Docker Swarm (simpler), Nomad                                                  |

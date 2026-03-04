@@ -17,14 +17,14 @@ The core idea: your AI assistant should live where *you* already are (WhatsApp, 
 
 These two tools are **complementary, not redundant**:
 
-| | Open WebUI | OpenClaw |
-|---|---|---|
-| **Interface** | Web browser (ChatGPT-like) | Messaging apps (WhatsApp, Telegram, Slack, Discord, Signal, iMessage, Teams, Matrix, IRC, ...) |
-| **User type** | Teams, casual users, demos | Power user / personal assistant |
-| **Interaction** | Pull — you go to it | Push — always-on, comes to you |
-| **Core strength** | RAG, document upload, model switching, multi-user accounts | Autonomous agent loops, tool use, multi-channel inbox, voice wake, device control |
-| **Multi-user** | Yes (built-in user management) | Single-user (personal assistant) |
-| **GPU needs** | No (connects to Ollama) | No (connects to Ollama or cloud APIs) |
+|                   | Open WebUI                                                 | OpenClaw                                                                                       |
+| :---------------- | :--------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
+| **Interface**     | Web browser (ChatGPT-like)                                 | Messaging apps (WhatsApp, Telegram, Slack, Discord, Signal, iMessage, Teams, Matrix, IRC, ...) |
+| **User type**     | Teams, casual users, demos                                 | Power user / personal assistant                                                                |
+| **Interaction**   | Pull — you go to it                                        | Push — always-on, comes to you                                                                 |
+| **Core strength** | RAG, document upload, model switching, multi-user accounts | Autonomous agent loops, tool use, multi-channel inbox, voice wake, device control              |
+| **Multi-user**    | Yes (built-in user management)                             | Single-user (personal assistant)                                                               |
+| **GPU needs**     | No (connects to Ollama)                                    | No (connects to Ollama or cloud APIs)                                                          |
 
 **Use Open WebUI** for team access, RAG document exploration, and model comparison.
 **Use OpenClaw** as your personal always-on agent — reachable from your phone, can execute commands, browse the web, manage files, send emails, control devices.

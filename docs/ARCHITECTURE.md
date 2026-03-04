@@ -83,13 +83,13 @@ kubectl apply -k stacks/core/traefik/k8s/base/
 
 ### AI (`stacks/ai/`)
 
-| Stack      | Purpose                               | Node      |
-| :--------- | :------------------------------------ | :-------- |
-| ollama     | LLM inference (GPU)                   | local     |
-| open-webui | Chat UI with RAG, MCP, memory (teams) | local     |
-| openclaw   | Personal AI agent gateway (always-on) | vps       |
-| tts        | Piper (fast) + XTTS-v2 (clone)       | local     |
-| stt        | Faster-Whisper                        | local     |
+| Stack      | Purpose                               | Node  |
+| :--------- | :------------------------------------ | :---- |
+| ollama     | LLM inference (GPU)                   | local |
+| open-webui | Chat UI with RAG, MCP, memory (teams) | local |
+| openclaw   | Personal AI agent gateway (always-on) | vps   |
+| tts        | Piper (fast) + XTTS-v2 (clone)        | local |
+| stt        | Faster-Whisper                        | local |
 
 **Open WebUI vs OpenClaw**: Open WebUI is a web-based chat UI for teams and casual users (RAG, document upload, multi-user). OpenClaw is a personal AI agent that lives in your messaging apps (WhatsApp, Telegram, Slack, etc.) and can autonomously execute tasks. They are complementary — both connect to the same Ollama instance.
 

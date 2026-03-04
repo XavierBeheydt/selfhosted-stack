@@ -289,10 +289,16 @@ def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--apply", action="store_true", help="Write changes in-place")
     p.add_argument("--path", default=".", help="Root path to search (default: .)")
+    p.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        help="Substring to exclude (repeatable)",
+    )
     p.add_argument("--verbose", "-v", action="store_true")
     args = p.parse_args()
 
-    files = find_md_files(args.path)
+    files = find_md_files(args.path, excludes=args.exclude)
     if args.verbose:
         print(f"Found {len(files)} markdown files under {args.path}")
 
