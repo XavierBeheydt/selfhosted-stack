@@ -21,7 +21,7 @@ services:
       DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD:?N8N_DB_PASSWORD required}
     networks:
       - proxy
-      - n8n-internal
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -50,7 +50,7 @@ services:
       POSTGRES_USER: ${N8N_DB_USER:-n8n}
       POSTGRES_PASSWORD: ${N8N_DB_PASSWORD:?N8N_DB_PASSWORD required}
     networks:
-      - n8n-internal
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${N8N_DB_USER:-n8n}"]
       interval: 30s
@@ -64,5 +64,5 @@ volumes:
 networks:
   proxy:
     external: true
-  n8n-internal:
+  internal:
     driver: bridge

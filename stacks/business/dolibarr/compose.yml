@@ -30,7 +30,7 @@ services:
       PHP_INI_DATE_TIMEZONE: ${TZ:-Europe/Paris}
     networks:
       - proxy
-      - dolibarr-internal
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:80/ || exit 1"]
       interval: 30s
@@ -58,7 +58,7 @@ services:
       MYSQL_USER: ${DOLI_DB_USER:-dolidbuser}
       MYSQL_PASSWORD: ${DOLI_DB_PASSWORD:?DOLI_DB_PASSWORD required}
     networks:
-      - dolibarr-internal
+      - internal
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 30s
@@ -74,5 +74,5 @@ volumes:
 networks:
   proxy:
     external: true
-  dolibarr-internal:
+  internal:
     driver: bridge

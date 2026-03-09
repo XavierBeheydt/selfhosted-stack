@@ -18,7 +18,7 @@ services:
       AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?AUTHENTIK_SECRET_KEY required}
     networks:
       - proxy
-      - authentik-internal
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -52,7 +52,7 @@ services:
       AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_DB_PASSWORD:?AUTHENTIK_DB_PASSWORD required}
       AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:?AUTHENTIK_SECRET_KEY required}
     networks:
-      - authentik-internal
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -70,7 +70,7 @@ services:
       POSTGRES_DB: ${AUTHENTIK_DB_NAME:-authentik}
       POSTGRES_PASSWORD: ${AUTHENTIK_DB_PASSWORD:?AUTHENTIK_DB_PASSWORD required}
     networks:
-      - authentik-internal
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${AUTHENTIK_DB_USER:-authentik}"]
       interval: 30s
@@ -85,7 +85,7 @@ services:
     volumes:
       - authentik-redis:/data
     networks:
-      - authentik-internal
+      - internal
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -101,5 +101,5 @@ volumes:
 networks:
   proxy:
     external: true
-  authentik-internal:
+  internal:
     driver: bridge

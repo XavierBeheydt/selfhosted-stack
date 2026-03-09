@@ -16,7 +16,7 @@ services:
       JWT_SECRET: ${POSTIZ_JWT_SECRET:?POSTIZ_JWT_SECRET required}
     networks:
       - proxy
-      - postiz-internal
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -47,7 +47,7 @@ services:
       POSTGRES_USER: ${POSTIZ_DB_USER:-postiz}
       POSTGRES_PASSWORD: ${POSTIZ_DB_PASSWORD:?POSTIZ_DB_PASSWORD required}
     networks:
-      - postiz-internal
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTIZ_DB_USER:-postiz}"]
       interval: 30s
@@ -62,7 +62,7 @@ services:
     volumes:
       - postiz-redis:/data
     networks:
-      - postiz-internal
+      - internal
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -77,5 +77,5 @@ volumes:
 networks:
   proxy:
     external: true
-  postiz-internal:
+  internal:
     driver: bridge

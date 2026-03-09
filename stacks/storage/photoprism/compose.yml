@@ -25,7 +25,7 @@ services:
       PHOTOPRISM_DETECT_NSFW: "false"
     networks:
       - proxy
-      - photoprism-internal
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -54,7 +54,7 @@ services:
       MARIADB_USER: ${PHOTOPRISM_DB_USER:-photoprism}
       MARIADB_PASSWORD: ${PHOTOPRISM_DB_PASSWORD:?PHOTOPRISM_DB_PASSWORD required}
     networks:
-      - photoprism-internal
+      - internal
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 30s
@@ -70,5 +70,5 @@ volumes:
 networks:
   proxy:
     external: true
-  photoprism-internal:
+  internal:
     driver: bridge

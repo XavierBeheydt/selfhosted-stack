@@ -16,7 +16,7 @@ services:
       REDIS_HOSTNAME: redis
     networks:
       - proxy
-      - immich-internal
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -41,7 +41,7 @@ services:
     volumes:
       - immich-ml-cache:/cache
     networks:
-      - immich-internal
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:3003/ping\")'"]
       interval: 30s
@@ -59,7 +59,7 @@ services:
       POSTGRES_USER: ${IMMICH_DB_USER:-immich}
       POSTGRES_PASSWORD: ${IMMICH_DB_PASSWORD:?IMMICH_DB_PASSWORD required}
     networks:
-      - immich-internal
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${IMMICH_DB_USER:-immich}"]
       interval: 30s
@@ -71,7 +71,7 @@ services:
     container_name: immich-redis
     restart: unless-stopped
     networks:
-      - immich-internal
+      - internal
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 30s
@@ -86,5 +86,5 @@ volumes:
 networks:
   proxy:
     external: true
-  immich-internal:
+  internal:
     driver: bridge

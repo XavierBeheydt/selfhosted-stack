@@ -15,7 +15,7 @@ services:
       - dns-zones:/etc/coredns/zones
     networks:
       - proxy
-      - dns-internal
+      - internal
     healthcheck:
       test: ["CMD", "dig", "@127.0.0.1", "-p", "53", "health.local", "+short", "+timeout=2"]
       interval: 30s
@@ -40,7 +40,7 @@ services:
       DNSZONER_BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
       DNSZONER_DEFAULT_IP: ${DNS_DEFAULT_IP:-127.0.0.1}
     networks:
-      - dns-internal
+      - internal
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8053/health')"]
       interval: 30s
@@ -53,5 +53,5 @@ volumes:
 networks:
   proxy:
     external: true
-  dns-internal:
+  internal:
     driver: bridge

@@ -14,7 +14,7 @@ services:
       OPENAI_API_BASE: "http://litellm:4000/v1"
     networks:
       - proxy
-      - mem0-internal
+      - internal
     depends_on:
       qdrant:
         condition: service_healthy
@@ -37,7 +37,7 @@ services:
     volumes:
       - qdrant-data:/qdrant/storage
     networks:
-      - mem0-internal
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:6333/healthz || exit 1"]
       interval: 30s
@@ -50,5 +50,5 @@ volumes:
 networks:
   proxy:
     external: true
-  mem0-internal:
+  internal:
     driver: bridge

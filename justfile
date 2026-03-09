@@ -446,3 +446,89 @@ validate:
     fi
     echo "All compose files valid"
 
+# Run the formatter in check mode (matches CI ruff format --check)
+dnszoner-fmt-check: dnszoner-install
+    uv --project {{dnszoner_dir}} --directory {{dnszoner_dir}} run ruff format --check src/ tests/
+
+# Validate all compose files with the same environment used in CI (safe defaults)
+validate-ci:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # Provide the env vars the compose files may expect during CI validation
+    export CONTAINER_ENGINE_SOCKET=/var/run/docker.sock
+    export BASE_DOMAIN=localhost
+    export TZ=UTC
+    export TRAEFIK_DASHBOARD_AUTH="admin:test"
+    export WG_HOST=vpn.localhost
+    export WG_PASSWORD_HASH="test"
+    export AUTHENTIK_SECRET_KEY=test-secret-key
+    export AUTHENTIK_DB_PASSWORD=test
+    export DOLI_DB_ROOT_PASSWORD=test
+    export DOLI_DB_PASSWORD=test
+    export DOLI_ADMIN_PASSWORD=test
+    export POSTIZ_DB_PASSWORD=test
+    export POSTIZ_JWT_SECRET=test-jwt-secret
+    export SEARXNG_SECRET=test-secret
+    export MEILI_MASTER_KEY=test-master-key
+    export SEAFILE_DB_ROOT_PASSWORD=test
+    export SEAFILE_ADMIN_EMAIL=admin@test.com
+    export SEAFILE_ADMIN_PASSWORD=test
+    export IMMICH_DB_PASSWORD=test
+    export PHOTOPRISM_ADMIN_PASSWORD=test
+    export PHOTOPRISM_DB_PASSWORD=test
+    export PHOTOPRISM_DB_ROOT_PASSWORD=test
+    export LITELLM_MASTER_KEY=test-master-key
+    export LITELLM_API_KEY=test-api-key
+    export LITELLM_DB_PASSWORD=test
+    export WEBUI_SECRET_KEY=test-secret-key
+
+    errors=0
+    for f in $(find stacks -name compose.yml -type f | sort); do
+        printf "Validating %s... " "$f"
+        if {{container_engine}} compose -f "$f" config --quiet 2>/dev/null; then
+            echo "OK"
+        else
+            echo "FAIL"
+            errors=$((errors + 1))
+        fi
+    done
+    if [ "$errors" -gt 0 ]; then
+        echo "ERROR: $errors compose file(s) failed validation"
+        exit 1
+    fi
+    echo "All compose files valid"
+
+# Run ShellCheck locally (if installed)
+shellcheck:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if command -v shellcheck >/dev/null 2>&1; then
+        # collect shell script files tracked by git, fall back to scanning repository
+        files=$(git ls-files '*.sh' || true)
+        if [ -z "$files" ]; then
+            echo "No shell scripts tracked by git found, skipping shellcheck"
+        else
+            shellcheck -x $files
+        fi
+    else
+        echo "shellcheck not installed, skipping shell checks. Install it to enable shell linting."
+    fi
+
+# Run the same sequence of checks that CI runs (lint, format-check, tests, compose validate, shellcheck)
+ci: dnszoner-install
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "== DNSZoner: ruff check =="
+    uv --project {{dnszoner_dir}} --directory {{dnszoner_dir}} run ruff check src/ tests/
+
+    echo "== DNSZoner: ruff format --check =="
+    uv --project {{dnszoner_dir}} --directory {{dnszoner_dir}} run ruff format --check src/ tests/
+
+    echo "== DNSZoner: pytest =="
+    uv --project {{dnszoner_dir}} --directory {{dnszoner_dir}} run pytest
+
+    echo "== Compose: validate (CI defaults) =="
+    just validate-ci
+
+    echo "== Shell: shellcheck =="
+    just shellcheck || true

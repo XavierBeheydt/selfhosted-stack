@@ -17,7 +17,7 @@ services:
       SEARXNG_QUERY_URL: "http://searxng:8080/search?q=<query>"
     networks:
       - proxy
-      - open-webui-internal
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:8080/ || exit 1"]
       interval: 30s
@@ -38,5 +38,5 @@ volumes:
 networks:
   proxy:
     external: true
-  open-webui-internal:
+  internal:
     driver: bridge

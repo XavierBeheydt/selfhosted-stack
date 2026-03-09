@@ -18,7 +18,7 @@ services:
       OLLAMA_API_BASE: ${OLLAMA_API_BASE:-http://10.13.13.2:11434}
     networks:
       - proxy
-      - litellm-internal
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -47,7 +47,7 @@ services:
       POSTGRES_USER: ${LITELLM_DB_USER:-litellm}
       POSTGRES_PASSWORD: ${LITELLM_DB_PASSWORD:?LITELLM_DB_PASSWORD required}
     networks:
-      - litellm-internal
+      - internal
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${LITELLM_DB_USER:-litellm}"]
       interval: 30s
@@ -60,5 +60,5 @@ volumes:
 networks:
   proxy:
     external: true
-  litellm-internal:
+  internal:
     driver: bridge

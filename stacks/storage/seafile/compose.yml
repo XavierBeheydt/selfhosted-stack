@@ -17,7 +17,7 @@ services:
       SEAFILE_SERVER_LETSENCRYPT: "false"
     networks:
       - proxy
-      - seafile-internal
+      - internal
     depends_on:
       db:
         condition: service_healthy
@@ -48,7 +48,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${SEAFILE_DB_ROOT_PASSWORD:-seafile_root_password}
       MYSQL_LOG_CONSOLE: "true"
     networks:
-      - seafile-internal
+      - internal
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 30s
@@ -62,7 +62,7 @@ services:
     restart: unless-stopped
     entrypoint: memcached -m 256
     networks:
-      - seafile-internal
+      - internal
 
 volumes:
   seafile-data:
@@ -71,5 +71,5 @@ volumes:
 networks:
   proxy:
     external: true
-  seafile-internal:
+  internal:
     driver: bridge
