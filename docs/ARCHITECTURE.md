@@ -14,9 +14,9 @@ proxy.
 ## Network Topology
 
 ```
-                ┌──────────────────────────────────────────┐
-                │               Internet                    │
-                └────────────────┬─────────────────────────┘
+                ┌──────────────────────────────────┐
+                │             Internet             │
+                └────────────────┬─────────────────┘
                                  │
                     ┌────────────┴────────────┐
                     │      VPS (Ubuntu)       │
@@ -25,9 +25,9 @@ proxy.
                     │  ┌───────────────────┐  │
                     │  │    Traefik        │  │
                     │  │  (reverse proxy)  │  │
-                    │  └────────┬──────────┘  │
-                    │           │              │
-                    │  ┌────────┴──────────┐  │
+                    │  └─────────┬─────────┘  │
+                    │            │            │
+                    │  ┌─────────┴─────────┐  │
                     │  │   proxy network   │  │
                     │  │                   │  │
                     │  │ Authentik (SSO)   │  │
@@ -42,12 +42,12 @@ proxy.
                     │  │ Open WebUI        │  │
                     │  │ mem0 (memory)     │  │
                     │  │ OpenClaw (agent)  │  │
-                    │  └──────────────────┘  │
+                    │  └───────────────────┘  │
                     │                         │
-                    │  ┌──────────────────┐   │
-                    │  │ CoreDNS + DNSZoner│  │
+                    │  ┌────────────────────┐ │
+                    │  │ CoreDNS + DNSZoner │ │
                     │  │ WireGuard (wg-easy)│ │
-                    │  └──────────────────┘   │
+                    │  └────────────────────┘ │
                     └────────────┬────────────┘
                                  │
                         WireGuard VPN tunnel
@@ -58,17 +58,17 @@ proxy.
                     │     RTX 4090 GPU        │
                     │                         │
                     │  Ollama (LLM inference) │
-                    │  TTS / STT             │
+                    │  TTS / STT              │
                     │  Immich (testing)       │
                     │  PhotoPrism (testing)   │
-                    └─────────────────────────┘
+                    └────────────┬────────────┘
                                  │
                         WireGuard VPN tunnel
                                  │
-                    ┌─────────────────────────┐
+                    ┌────────────┴─────────────┐
                     │    Client Devices        │
                     │  (laptops, phones, etc.) │
-                    └─────────────────────────┘
+                    └──────────────────────────┘
 ```
 
 ## Node Assignments
@@ -146,18 +146,18 @@ records, so services are automatically resolvable by name.
 ## AI Routing
 
 ```
-                  ┌──────────────────────┐
-                  │      LiteLLM         │
-                  │   (API Router/VPS)   │
-                  └──────┬───────────────┘
+             ┌──────────────────────┐
+             │      LiteLLM         │
+             │   (API Router/VPS)   │
+             └───────────┬──────────┘
                          │
               ┌──────────┼──────────┐
               │          │          │
-          ┌───┴───┐  ┌──┴──┐  ┌───┴────┐
-          │Ollama │  │Cloud│  │OpenAI  │
-          │(Local)│  │ LLM │  │Copilot │
-          │GPU    │  │ API │  │etc.    │
-          └───────┘  └─────┘  └────────┘
+          ┌───┴───┐   ┌──┴──┐   ┌───┴────┐
+          │Ollama │   │Cloud│   │OpenAI  │
+          │(Local)│   │ LLM │   │Copilot │
+          │GPU    │   │ API │   │etc.    │
+          └───────┘   └─────┘   └────────┘
 ```
 
 - **LiteLLM** runs on the VPS and acts as a unified OpenAI-compatible API
