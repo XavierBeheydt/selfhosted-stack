@@ -10,10 +10,10 @@ services:
     environment:
       TZ: ${TZ:-Europe/Paris}
       DB_HOST: db
-      DB_ROOT_PASSWD: ${SEAFILE_DB_ROOT_PASSWORD:?SEAFILE_DB_ROOT_PASSWORD required}
-      SEAFILE_ADMIN_EMAIL: ${SEAFILE_ADMIN_EMAIL:?SEAFILE_ADMIN_EMAIL required}
-      SEAFILE_ADMIN_PASSWORD: ${SEAFILE_ADMIN_PASSWORD:?SEAFILE_ADMIN_PASSWORD required}
-      SEAFILE_SERVER_HOSTNAME: "files.${BASE_DOMAIN:?BASE_DOMAIN required}"
+      DB_ROOT_PASSWD: ${SEAFILE_DB_ROOT_PASSWORD:-seafile_root_password}
+      SEAFILE_ADMIN_EMAIL: ${SEAFILE_ADMIN_EMAIL:-admin@example.com}
+      SEAFILE_ADMIN_PASSWORD: ${SEAFILE_ADMIN_PASSWORD:-changeme}
+      SEAFILE_SERVER_HOSTNAME: "files.${BASE_DOMAIN:-example.com}"
       SEAFILE_SERVER_LETSENCRYPT: "false"
     networks:
       - proxy
@@ -45,7 +45,7 @@ services:
     volumes:
       - seafile-db:/var/lib/mysql
     environment:
-      MYSQL_ROOT_PASSWORD: ${SEAFILE_DB_ROOT_PASSWORD:?SEAFILE_DB_ROOT_PASSWORD required}
+      MYSQL_ROOT_PASSWORD: ${SEAFILE_DB_ROOT_PASSWORD:-seafile_root_password}
       MYSQL_LOG_CONSOLE: "true"
     networks:
       - seafile-internal
