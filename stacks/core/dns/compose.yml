@@ -1,0 +1,57 @@
+name: dns
+
+services:
+  coredns:
+    image: coredns/coredns:1.12.0
+    container_name: coredns
+    restart: unless-stopped
+    command: -conf /etc/coredns/Corefile
+    ports:
+      - "${DNS_HOST:-0.0.0.0}:${DNS_PORT:-53}:53/udp"
+      - "${DNS_HOST:-0.0.0.0}:${DNS_PORT:-53}:53/tcp"
+      - "${DNS_HOST:-0.0.0.0}:853:853/tcp"
+    volumes:
+      - ./config/Corefile:/etc/coredns/Corefile:ro
+      - dns-zones:/etc/coredns/zones
+    networks:
+      - proxy
+      - dns-internal
+    healthcheck:
+      test: ["CMD", "dig", "@127.0.0.1", "-p", "53", "health.local", "+short", "+timeout=2"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      dnszoner:
+        condition: service_healthy
+
+  dnszoner:
+    build:
+      context: ./dnszoner
+      dockerfile: ContainerFile
+    container_name: dnszoner
+    restart: unless-stopped
+    volumes:
+      - ${CONTAINER_ENGINE_SOCKET:-/run/user/1000/podman/podman.sock}:/var/run/docker.sock:ro
+      - dns-zones:/zones
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      DNSZONER_ZONE_DIR: /zones
+      DNSZONER_BASE_DOMAIN: ${BASE_DOMAIN:-localhost}
+      DNSZONER_DEFAULT_IP: ${DNS_DEFAULT_IP:-127.0.0.1}
+    networks:
+      - dns-internal
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8053/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  dns-zones:
+
+networks:
+  proxy:
+    external: true
+  dns-internal:
+    driver: bridge

@@ -1,0 +1,37 @@
+name: traefik
+
+services:
+  traefik:
+    image: traefik:v3.2
+    container_name: traefik
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ${CONTAINER_ENGINE_SOCKET:-/run/user/1000/podman/podman.sock}:/var/run/docker.sock:ro
+      - ./config/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./config/dynamic/:/etc/traefik/dynamic/:ro
+      - traefik-certs:/etc/traefik/acme
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.dashboard.rule: "Host(`traefik.${BASE_DOMAIN:?BASE_DOMAIN required}`)"
+      traefik.http.routers.dashboard.entrypoints: websecure
+      traefik.http.routers.dashboard.tls.certresolver: letsencrypt
+      traefik.http.routers.dashboard.service: api@internal
+
+volumes:
+  traefik-certs:
+
+networks:
+  proxy:
+    external: true
