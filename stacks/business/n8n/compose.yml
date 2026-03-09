@@ -9,16 +9,16 @@ services:
       - n8n-data:/home/node/.n8n
     environment:
       TZ: ${TZ:-Europe/Paris}
-      N8N_HOST: "n8n.${BASE_DOMAIN:?BASE_DOMAIN required}"
+      N8N_HOST: "n8n.${BASE_DOMAIN:-example.com}"
       N8N_PROTOCOL: https
       N8N_PORT: "5678"
-      WEBHOOK_URL: "https://n8n.${BASE_DOMAIN}"
+      WEBHOOK_URL: "https://n8n.${BASE_DOMAIN:-example.com}"
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: db
       DB_POSTGRESDB_PORT: "5432"
       DB_POSTGRESDB_DATABASE: ${N8N_DB_NAME:-n8n}
       DB_POSTGRESDB_USER: ${N8N_DB_USER:-n8n}
-      DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD:?N8N_DB_PASSWORD required}
+      DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD:-changeme}
     networks:
       - proxy
       - internal
@@ -37,7 +37,7 @@ services:
       traefik.http.routers.n8n.tls.certresolver: letsencrypt
       traefik.http.services.n8n.loadbalancer.server.port: "5678"
       dnszoner.enable: "true"
-      dnszoner.domain: "n8n.${BASE_DOMAIN}"
+      dnszoner.domain: "n8n.${BASE_DOMAIN:-example.com}"
 
   db:
     image: postgres:16-alpine
@@ -48,7 +48,7 @@ services:
     environment:
       POSTGRES_DB: ${N8N_DB_NAME:-n8n}
       POSTGRES_USER: ${N8N_DB_USER:-n8n}
-      POSTGRES_PASSWORD: ${N8N_DB_PASSWORD:?N8N_DB_PASSWORD required}
+      POSTGRES_PASSWORD: ${N8N_DB_PASSWORD:-changeme}
     networks:
       - internal
     healthcheck:
