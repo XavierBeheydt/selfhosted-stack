@@ -1,0 +1,81 @@
+name: postiz
+
+services:
+  app:
+    image: ghcr.io/gitroomhq/postiz-app:latest
+    container_name: postiz
+    restart: unless-stopped
+    volumes:
+      - postiz-uploads:/app/uploads
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      DATABASE_URL: "postgresql://${POSTIZ_DB_USER:-postiz}:${POSTIZ_DB_PASSWORD:?POSTIZ_DB_PASSWORD required}@db:5432/${POSTIZ_DB_NAME:-postiz}"
+      REDIS_URL: "redis://redis:6379"
+      NEXT_PUBLIC_BACKEND_URL: "https://social.${BASE_DOMAIN:?BASE_DOMAIN required}/api"
+      BACKEND_INTERNAL_URL: "http://localhost:3000"
+      JWT_SECRET: ${POSTIZ_JWT_SECRET:?POSTIZ_JWT_SECRET required}
+    networks:
+      - proxy
+      - postiz-internal
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.postiz.rule: "Host(`social.${BASE_DOMAIN}`)"
+      traefik.http.routers.postiz.entrypoints: websecure
+      traefik.http.routers.postiz.tls.certresolver: letsencrypt
+      traefik.http.services.postiz.loadbalancer.server.port: "5000"
+      dnszoner.enable: "true"
+      dnszoner.domain: "social.${BASE_DOMAIN}"
+
+  db:
+    image: postgres:16-alpine
+    container_name: postiz-db
+    restart: unless-stopped
+    volumes:
+      - postiz-db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTIZ_DB_NAME:-postiz}
+      POSTGRES_USER: ${POSTIZ_DB_USER:-postiz}
+      POSTGRES_PASSWORD: ${POSTIZ_DB_PASSWORD:?POSTIZ_DB_PASSWORD required}
+    networks:
+      - postiz-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTIZ_DB_USER:-postiz}"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: postiz-redis
+    restart: unless-stopped
+    command: --save 60 1 --loglevel warning
+    volumes:
+      - postiz-redis:/data
+    networks:
+      - postiz-internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  postiz-db:
+  postiz-redis:
+  postiz-uploads:
+
+networks:
+  proxy:
+    external: true
+  postiz-internal:
+    driver: bridge

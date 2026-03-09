@@ -43,11 +43,11 @@ just up traefik
 
 | Stack | Description | Node |
 | :---- | :---------- | :--- |
-| [ollama](stacks/ai/ollama/) | LLM inference (GPU) | Local |
-| [open-webui](stacks/ai/open-webui/) | LLM chat UI with RAG, MCP tools, per-user memory | Local |
-| [litellm](stacks/ai/litellm/) | API router/aggregator (OpenRouter, Copilot, local) | Local |
-| [mem0](stacks/ai/mem0/) | Persistent AI memory per user (pgvector) | Local |
-| [openclaw](stacks/ai/openclaw/) | Personal AI coding agent | Local |
+| [litellm](stacks/ai/litellm/) | API router/aggregator (OpenRouter, Copilot, local) | VPS |
+| [open-webui](stacks/ai/open-webui/) | LLM chat UI with RAG, MCP tools, per-user memory | VPS |
+| [mem0](stacks/ai/mem0/) | Persistent AI memory per user (pgvector) | VPS |
+| [ollama](stacks/ai/ollama/) | LLM inference (GPU: RTX 4090) | Local |
+| [openclaw](stacks/ai/openclaw/) | Personal AI coding agent | VPS |
 | [tts](stacks/ai/tts/) | Text-to-speech service | TBD |
 | [stt](stacks/ai/stt/) | Speech-to-text service | TBD |
 
@@ -77,15 +77,17 @@ just up traefik
               WireGuard Hub + Traefik
               CoreDNS + Authentik (SSO)
             Dolibarr, n8n, Postiz, Seafile
-           Meilisearch, SearXNG, Uptime Kuma
+          Meilisearch, SearXNG, Uptime Kuma
+          LiteLLM (API router), Open WebUI
+           mem0, OpenClaw, Monitoring
                        |
                   WireGuard VPN
                        |
                  [Local PC Node]
               RTX 4090 GPU workloads
-           Ollama, Open WebUI, LiteLLM
-           mem0, OpenClaw, TTS/STT
+             Ollama (LLM inference)
            Immich/PhotoPrism (testing)
+              TTS/STT (if GPU needed)
                        |
                   WireGuard VPN
                        |
