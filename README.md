@@ -71,23 +71,32 @@ just up traefik
 ## Architecture
 
 ```
-                    Internet
-                       |
-                [Gateway Node]
-           WireGuard Hub + Traefik
-           CoreDNS + Authentik (SSO)
-         Dolibarr, n8n, Postiz, Seafile
-       Meilisearch, SearXNG, Uptime Kuma
-       LiteLLM (API router), Open WebUI
-            mem0, OpenClaw
-               |         |
-          WireGuard    WireGuard
-          VPN          VPN
-               |         |
-       [Compute Node]  [Client Devices]
-        GPU workloads   laptops, phones
-        Ollama (LLM)
-        TTS/STT
+                        Internet
+                           |
+              +------------+------------+
+              |      Gateway Node       |
+              |   WireGuard Hub + DNS   |
+              |   Traefik (proxy)       |
+              |   Authentik (SSO)       |
+              |   Dolibarr, n8n, Postiz |
+              |   Seafile, SearXNG      |
+              |   Meilisearch           |
+              |   Uptime Kuma           |
+              |   LiteLLM, Open WebUI   |
+              |   mem0, OpenClaw        |
+              +---+-----------------+---+
+                  |                 |
+           WireGuard VPN     WireGuard VPN
+                  |                 |
+    +-------------+---+    +-------+-----------+
+    |  Compute Node   |    |  Client Devices   |
+    |  GPU workloads  |    |  laptops, phones  |
+    |                 |    +-------------------+
+    |  Ollama (LLM)   |
+    |  TTS / STT      |
+    |  Immich (test)   |
+    |  PhotoPrism (test)|
+    +-----------------+
 ```
 
 See [AGENTS.md](AGENTS.md) for detailed architecture, networking, and node
