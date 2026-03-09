@@ -1,0 +1,51 @@
+# Deploy Inventory
+# List of servers and which stacks to deploy on each.
+#
+# Usage with deploy.sh:
+#   ./deploy/deploy.sh <host> <user> <deploy_path> [stacks...]
+#
+# Stack paths are relative to stacks/ directory.
+
+servers:
+  # Primary VPS - runs all public-facing services
+  vps:
+    host: "${VPS_HOST}"
+    user: deploy
+    port: 22
+    deploy_path: /opt/selfhosted-stack
+    stacks:
+      # Core
+      - core/traefik
+      - core/dns
+      - core/wireguard
+      - core/authentik
+      - core/monitoring
+      # Business
+      - business/dolibarr
+      - business/n8n
+      - business/postiz
+      # Search
+      - search/searxng
+      - search/meilisearch
+      # Storage
+      - storage/seafile
+
+  # Local machine (Archlinux + RTX 4090) - GPU workloads
+  # Accessible from VPS via WireGuard hub-spoke VPN
+  local:
+    host: "${LOCAL_HOST}"
+    user: deploy
+    port: 22
+    deploy_path: /opt/selfhosted-stack
+    stacks:
+      # AI (GPU)
+      - ai/ollama
+      - ai/litellm
+      - ai/open-webui
+      - ai/mem0
+      - ai/openclaw
+      - ai/tts
+      - ai/stt
+      # Storage (testing / optional)
+      # - storage/immich
+      # - storage/photoprism
