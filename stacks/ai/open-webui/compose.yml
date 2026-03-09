@@ -1,0 +1,42 @@
+name: open-webui
+
+services:
+  app:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    volumes:
+      - open-webui-data:/app/backend/data
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      OPENAI_API_BASE_URL: "http://litellm:4000/v1"
+      OPENAI_API_KEY: ${LITELLM_API_KEY:?LITELLM_API_KEY required}
+      WEBUI_SECRET_KEY: ${WEBUI_SECRET_KEY:?WEBUI_SECRET_KEY required}
+      ENABLE_RAG_WEB_SEARCH: "true"
+      RAG_WEB_SEARCH_ENGINE: "searxng"
+      SEARXNG_QUERY_URL: "http://searxng:8080/search?q=<query>"
+    networks:
+      - proxy
+      - open-webui-internal
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.open-webui.rule: "Host(`chat.${BASE_DOMAIN:?BASE_DOMAIN required}`)"
+      traefik.http.routers.open-webui.entrypoints: websecure
+      traefik.http.routers.open-webui.tls.certresolver: letsencrypt
+      traefik.http.services.open-webui.loadbalancer.server.port: "8080"
+      dnszoner.enable: "true"
+      dnszoner.domain: "chat.${BASE_DOMAIN}"
+
+volumes:
+  open-webui-data:
+
+networks:
+  proxy:
+    external: true
+  open-webui-internal:
+    driver: bridge

@@ -1,0 +1,35 @@
+name: openclaw
+
+services:
+  app:
+    image: ghcr.io/openclaw/openclaw:latest
+    container_name: openclaw
+    restart: unless-stopped
+    volumes:
+      - openclaw-data:/app/data
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      LLM_API_BASE: "http://litellm:4000/v1"
+      LLM_API_KEY: ${LITELLM_API_KEY:?LITELLM_API_KEY required}
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.openclaw.rule: "Host(`claw.${BASE_DOMAIN:?BASE_DOMAIN required}`)"
+      traefik.http.routers.openclaw.entrypoints: websecure
+      traefik.http.routers.openclaw.tls.certresolver: letsencrypt
+      traefik.http.services.openclaw.loadbalancer.server.port: "3000"
+      dnszoner.enable: "true"
+      dnszoner.domain: "claw.${BASE_DOMAIN}"
+
+volumes:
+  openclaw-data:
+
+networks:
+  proxy:
+    external: true

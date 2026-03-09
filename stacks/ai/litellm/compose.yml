@@ -1,0 +1,64 @@
+name: litellm
+
+services:
+  app:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm
+    restart: unless-stopped
+    command: --config /app/config.yaml --port 4000
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./config/litellm_config.yaml:/app/config.yaml:ro
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      DATABASE_URL: "postgresql://${LITELLM_DB_USER:-litellm}:${LITELLM_DB_PASSWORD:?LITELLM_DB_PASSWORD required}@db:5432/${LITELLM_DB_NAME:-litellm}"
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?LITELLM_MASTER_KEY required}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OLLAMA_API_BASE: ${OLLAMA_API_BASE:-http://10.13.13.2:11434}
+    networks:
+      - proxy
+      - litellm-internal
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.litellm.rule: "Host(`ai.${BASE_DOMAIN:?BASE_DOMAIN required}`)"
+      traefik.http.routers.litellm.entrypoints: websecure
+      traefik.http.routers.litellm.tls.certresolver: letsencrypt
+      traefik.http.services.litellm.loadbalancer.server.port: "4000"
+      dnszoner.enable: "true"
+      dnszoner.domain: "ai.${BASE_DOMAIN}"
+
+  db:
+    image: postgres:16-alpine
+    container_name: litellm-db
+    restart: unless-stopped
+    volumes:
+      - litellm-db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${LITELLM_DB_NAME:-litellm}
+      POSTGRES_USER: ${LITELLM_DB_USER:-litellm}
+      POSTGRES_PASSWORD: ${LITELLM_DB_PASSWORD:?LITELLM_DB_PASSWORD required}
+    networks:
+      - litellm-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${LITELLM_DB_USER:-litellm}"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  litellm-db:
+
+networks:
+  proxy:
+    external: true
+  litellm-internal:
+    driver: bridge
