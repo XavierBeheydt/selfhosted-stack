@@ -1,8 +1,8 @@
 # LiteLLM - API Router/Aggregator
 
 Unified API gateway that routes AI requests to multiple providers.
-Runs on VPS, routes to local Ollama over WireGuard for GPU inference,
-and to cloud providers (OpenRouter, GitHub Copilot, etc.) for external models.
+Routes to local Ollama over WireGuard for GPU inference, and to cloud
+providers (OpenRouter, GitHub Copilot, etc.) for external models.
 
 ## Features
 
@@ -34,5 +34,5 @@ model_list:
   - model_name: llama3
     litellm_params:
       model: ollama/llama3.1:8b
-      api_base: http://<local-pc-wg-ip>:11434
+      api_base: http://<compute-node-wg-ip>:11434
 ```

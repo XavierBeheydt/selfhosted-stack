@@ -1,7 +1,7 @@
 # Ollama - LLM Inference
 
-Local LLM inference server. Runs on the Local PC with RTX 4090 GPU.
-Accessed by LiteLLM on VPS over WireGuard.
+Local LLM inference server. Runs on the Compute node with GPU.
+Accessed by LiteLLM over WireGuard.
 
 ## Features
 
@@ -16,7 +16,7 @@ Accessed by LiteLLM on VPS over WireGuard.
 just up ollama
 ```
 
-API available at `http://<local-pc-ip>:11434`.
+API available at `http://<compute-node-ip>:11434`.
 
 ## Models
 

@@ -1,13 +1,13 @@
 # CD Pipeline - Deploy to servers after CI passes
 #
 # Required GitHub Secrets:
-#   VPS_HOST          - VPS hostname or IP
+#   GATEWAY_HOST      - Gateway node hostname or IP
 #   DEPLOY_SSH_KEY    - SSH private key for deploy user
 #   SSH_PORT          - SSH port (optional, default: 22)
 #
-# Optional secrets (local PC via WireGuard):
-#   LOCAL_HOST        - Local machine hostname/IP
-#   LOCAL_SSH_KEY     - SSH key for local machine
+# Optional secrets (compute node via WireGuard):
+#   COMPUTE_HOST      - Compute node hostname/IP
+#   COMPUTE_SSH_KEY   - SSH key for compute node
 
 name: Deploy
 
@@ -19,11 +19,11 @@ on:
       target:
         description: "Deploy target"
         required: true
-        default: "vps"
+        default: "gateway"
         type: choice
         options:
-          - vps
-          - local
+          - gateway
+          - compute
           - all
       stacks:
         description: "Stacks to deploy (space-separated, empty = defaults)"
@@ -44,24 +44,24 @@ jobs:
   ci:
     uses: ./.github/workflows/ci.yml
 
-  # --- Deploy to VPS ---
-  deploy-vps:
-    name: Deploy to VPS
+  # --- Deploy to Gateway ---
+  deploy-gateway:
+    name: Deploy to Gateway
     needs: ci
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'push' ||
       (github.event_name == 'workflow_dispatch' &&
-       (github.event.inputs.target == 'vps' || github.event.inputs.target == 'all'))
+       (github.event.inputs.target == 'gateway' || github.event.inputs.target == 'all'))
     environment: production
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to VPS
+      - name: Deploy to Gateway
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.VPS_HOST }}
+          host: ${{ secrets.GATEWAY_HOST }}
           username: deploy
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
@@ -112,27 +112,27 @@ jobs:
               fi
             done
 
-            echo "VPS deployment complete"
+            echo "Gateway deployment complete"
 
-  # --- Deploy to Local Machine (GPU, via WireGuard) ---
-  deploy-local:
-    name: Deploy to Local PC
+  # --- Deploy to Compute Node (GPU, via WireGuard) ---
+  deploy-compute:
+    name: Deploy to Compute
     needs: ci
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'workflow_dispatch' &&
-      (github.event.inputs.target == 'local' || github.event.inputs.target == 'all')
-    environment: local
+      (github.event.inputs.target == 'compute' || github.event.inputs.target == 'all')
+    environment: compute
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Local Machine
+      - name: Deploy to Compute Node
         uses: appleboy/ssh-action@v1
         with:
-          host: ${{ secrets.LOCAL_HOST }}
+          host: ${{ secrets.COMPUTE_HOST }}
           username: deploy
-          key: ${{ secrets.LOCAL_SSH_KEY }}
+          key: ${{ secrets.COMPUTE_SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
           command_timeout: 10m
           script: |
@@ -176,4 +176,4 @@ jobs:
               fi
             done
 
-            echo "Local deployment complete"
+            echo "Compute deployment complete"

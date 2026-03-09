@@ -1,7 +1,7 @@
 # TTS - Text-to-Speech
 
 Text-to-speech service. Node assignment TBD based on model requirements
-(GPU on Local PC vs CPU-only on VPS).
+(GPU on Compute node vs CPU-only on Gateway).
 
 ## Features
 

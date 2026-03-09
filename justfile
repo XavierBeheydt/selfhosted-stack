@@ -46,21 +46,21 @@ stack-logs path *args:
 stack-pull path:
     {{container_engine}} compose -f {{stacks_dir}}/{{path}}/compose.yml pull
 
-# === VPS Stacks (full deploy order) =========================================
+# === Gateway Stacks (full deploy order) ======================================
 
-# Start all VPS stacks in dependency order
-vps-up: traefik-up dns-up wireguard-up authentik-up monitoring-up dolibarr-up n8n-up postiz-up searxng-up meilisearch-up seafile-up
+# Start all Gateway stacks in dependency order
+gateway-up: traefik-up dns-up wireguard-up authentik-up monitoring-up dolibarr-up n8n-up postiz-up searxng-up meilisearch-up seafile-up
 
-# Stop all VPS stacks (reverse order)
-vps-down: seafile-down meilisearch-down searxng-down postiz-down n8n-down dolibarr-down monitoring-down authentik-down wireguard-down dns-down traefik-down
+# Stop all Gateway stacks (reverse order)
+gateway-down: seafile-down meilisearch-down searxng-down postiz-down n8n-down dolibarr-down monitoring-down authentik-down wireguard-down dns-down traefik-down
 
-# === Local PC Stacks (GPU workloads) ========================================
+# === Compute Stacks (GPU workloads) =========================================
 
-# Start all Local PC stacks
-local-up: ollama-up litellm-up open-webui-up mem0-up openclaw-up tts-up stt-up
+# Start all Compute stacks
+compute-up: ollama-up litellm-up open-webui-up mem0-up openclaw-up tts-up stt-up
 
-# Stop all Local PC stacks (reverse order)
-local-down: stt-down tts-down openclaw-down mem0-down open-webui-down litellm-down ollama-down
+# Stop all Compute stacks (reverse order)
+compute-down: stt-down tts-down openclaw-down mem0-down open-webui-down litellm-down ollama-down
 
 # === Core: Traefik ==========================================================
 
@@ -446,6 +446,3 @@ validate:
     fi
     echo "All compose files valid"
 
-# Format markdown tables
-fmt-md *args:
-    python3 scripts/format_md_tables.py --apply {{args}}

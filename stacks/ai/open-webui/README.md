@@ -1,7 +1,7 @@
 # Open WebUI - LLM Chat Interface
 
 Web-based LLM chat interface with RAG, MCP tools, and per-user memory.
-Runs on VPS, connects to LiteLLM for model access.
+Connects to LiteLLM for model access.
 
 ## Features
 

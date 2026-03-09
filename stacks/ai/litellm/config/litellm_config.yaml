@@ -1,5 +1,5 @@
 model_list:
-  # Local Ollama (GPU on Local PC, via WireGuard)
+  # Local Ollama (GPU on Compute node, via WireGuard)
   - model_name: llama3
     litellm_params:
       model: ollama/llama3.1:8b

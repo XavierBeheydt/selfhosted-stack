@@ -1,12 +1,12 @@
 # WireGuard - VPN Gateway
 
 WireGuard VPN with wg-easy web UI for peer management. Hub-spoke topology
-with VPS as the hub.
+with Gateway as the hub.
 
 ## Features
 
 - wg-easy web UI for adding/removing peers
-- Hub-spoke topology (VPS routes all traffic)
+- Hub-spoke topology (Gateway routes all traffic)
 - QR code generation for mobile clients
 - Automatic peer configuration
 
@@ -21,7 +21,7 @@ Access the management UI at `https://wg.<BASE_DOMAIN>`.
 ## Network Topology
 
 ```
-[Client] --WireGuard--> [VPS Hub] --WireGuard--> [Local PC]
+[Client] --WireGuard--> [Gateway Hub] --WireGuard--> [Compute]
                               |
                          All services
                          accessible via

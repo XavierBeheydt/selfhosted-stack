@@ -7,9 +7,9 @@
 # Stack paths are relative to stacks/ directory.
 
 servers:
-  # Primary VPS - runs all public-facing services
-  vps:
-    host: "${VPS_HOST}"
+  # Gateway node - entry point, runs all public-facing services
+  gateway:
+    host: "${GATEWAY_HOST}"
     user: deploy
     port: 22
     deploy_path: /opt/selfhosted-stack
@@ -30,10 +30,10 @@ servers:
       # Storage
       - storage/seafile
 
-  # Local machine (Archlinux + RTX 4090) - GPU workloads
-  # Accessible from VPS via WireGuard hub-spoke VPN
-  local:
-    host: "${LOCAL_HOST}"
+  # Compute node (GPU) - inference and ML workloads
+  # Accessible from Gateway via WireGuard hub-spoke VPN
+  compute:
+    host: "${COMPUTE_HOST}"
     user: deploy
     port: 22
     deploy_path: /opt/selfhosted-stack

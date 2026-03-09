@@ -47,17 +47,17 @@ Progress tracker for the selfhosted-stack rework (Compose-based architecture).
 
 - [x] `justfile` -- task runner with per-service recipes, node groups, validation
 - [x] `deploy/deploy.sh` -- SSH-based deployment script
-- [x] `deploy/inventory.yml` -- node inventory (VPS + local)
-- [x] `scripts/format_md_tables.py` -- markdown table formatter
+- [x] `deploy/inventory.yml` -- node inventory (Gateway + Compute)
+
 
 ### Phase 7 -- CI/CD
 
 - [x] `.github/workflows/ci.yml` -- DNSZoner tests, compose validation, ShellCheck
-- [x] `.github/workflows/deploy.yml` -- VPS + local node deployment via SSH
+- [x] `.github/workflows/deploy.yml` -- Gateway + Compute node deployment via SSH
 
 ### Phase 8 -- Documentation
 
-- [x] `docs/ARCHITECTURE.md` -- network topology, node mapping, AI routing, auth
+- [x] Architecture section in `AGENTS.md` -- network topology, node mapping, AI routing, auth
 
 ### Phase 9 -- DNSZoner Refactor
 

@@ -8,7 +8,7 @@
 #   ./deploy/deploy.sh <host> <user> <deploy_path> [stacks...]
 #
 # Example:
-#   ./deploy/deploy.sh vps.example.com deploy /opt/selfhosted-stack core/traefik core/dns
+#   ./deploy/deploy.sh gateway.example.com deploy /opt/selfhosted-stack core/traefik core/dns
 #
 # Environment variables:
 #   SSH_KEY_PATH  - Path to SSH private key (default: uses ssh-agent)

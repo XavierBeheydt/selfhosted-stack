@@ -25,29 +25,29 @@ just up traefik
 
 | Stack | Description | Node |
 | :---- | :---------- | :--- |
-| [traefik](stacks/core/traefik/) | Reverse proxy, TLS termination, routing | VPS |
-| [dns](stacks/core/dns/) | CoreDNS + DNSZoner sidecar (dynamic DNS, DNSSEC, DoT) | VPS |
-| [wireguard](stacks/core/wireguard/) | WireGuard VPN gateway (wg-easy), hub-spoke topology | VPS |
-| [authentik](stacks/core/authentik/) | SSO/OIDC identity provider, user management | VPS |
-| [monitoring](stacks/core/monitoring/) | Uptime Kuma status monitoring | VPS |
+| [traefik](stacks/core/traefik/) | Reverse proxy, TLS termination, routing | Gateway |
+| [dns](stacks/core/dns/) | CoreDNS + DNSZoner sidecar (dynamic DNS, DNSSEC, DoT) | Gateway |
+| [wireguard](stacks/core/wireguard/) | WireGuard VPN gateway (wg-easy), hub-spoke topology | Gateway |
+| [authentik](stacks/core/authentik/) | SSO/OIDC identity provider, user management | Gateway |
+| [monitoring](stacks/core/monitoring/) | Uptime Kuma status monitoring | Gateway |
 
 ### Business Services
 
 | Stack | Description | Node |
 | :---- | :---------- | :--- |
-| [dolibarr](stacks/business/dolibarr/) | ERP/CRM + MariaDB | VPS |
-| [n8n](stacks/business/n8n/) | Workflow automation + PostgreSQL | VPS |
-| [postiz](stacks/business/postiz/) | AI social media management | VPS |
+| [dolibarr](stacks/business/dolibarr/) | ERP/CRM + MariaDB | Gateway |
+| [n8n](stacks/business/n8n/) | Workflow automation + PostgreSQL | Gateway |
+| [postiz](stacks/business/postiz/) | AI social media management | Gateway |
 
 ### AI Tools
 
 | Stack | Description | Node |
 | :---- | :---------- | :--- |
-| [litellm](stacks/ai/litellm/) | API router/aggregator (OpenRouter, Copilot, local) | VPS |
-| [open-webui](stacks/ai/open-webui/) | LLM chat UI with RAG, MCP tools, per-user memory | VPS |
-| [mem0](stacks/ai/mem0/) | Persistent AI memory per user (pgvector) | VPS |
-| [ollama](stacks/ai/ollama/) | LLM inference (GPU: RTX 4090) | Local |
-| [openclaw](stacks/ai/openclaw/) | Personal AI coding agent | VPS |
+| [litellm](stacks/ai/litellm/) | API router/aggregator (OpenRouter, Copilot, local) | Gateway |
+| [open-webui](stacks/ai/open-webui/) | LLM chat UI with RAG, MCP tools, per-user memory | Gateway |
+| [mem0](stacks/ai/mem0/) | Persistent AI memory per user (pgvector) | Gateway |
+| [ollama](stacks/ai/ollama/) | LLM inference (GPU) | Compute |
+| [openclaw](stacks/ai/openclaw/) | Personal AI coding agent | Gateway |
 | [tts](stacks/ai/tts/) | Text-to-speech service | TBD |
 | [stt](stacks/ai/stt/) | Speech-to-text service | TBD |
 
@@ -55,14 +55,14 @@ just up traefik
 
 | Stack | Description | Node |
 | :---- | :---------- | :--- |
-| [meilisearch](stacks/search/meilisearch/) | Federated internal search (Dolibarr, Seafile, photos) | VPS |
-| [searxng](stacks/search/searxng/) | Privacy-first meta search engine | VPS |
+| [meilisearch](stacks/search/meilisearch/) | Federated internal search (Dolibarr, Seafile, photos) | Gateway |
+| [searxng](stacks/search/searxng/) | Privacy-first meta search engine | Gateway |
 
 ### Storage
 
 | Stack | Description | Node |
 | :---- | :---------- | :--- |
-| [seafile](stacks/storage/seafile/) | Cloud file storage (Google Drive alternative) | VPS |
+| [seafile](stacks/storage/seafile/) | Cloud file storage (Google Drive alternative) | Gateway |
 | [immich](stacks/storage/immich/) | Photo management with ML (Google Photos alt.) | Test |
 | [photoprism](stacks/storage/photoprism/) | Photo management with AI (Google Photos alt.) | Test |
 
@@ -73,28 +73,25 @@ just up traefik
 ```
                     Internet
                        |
-                   [VPS Node]
-              WireGuard Hub + Traefik
-              CoreDNS + Authentik (SSO)
-            Dolibarr, n8n, Postiz, Seafile
-          Meilisearch, SearXNG, Uptime Kuma
-          LiteLLM (API router), Open WebUI
-           mem0, OpenClaw, Monitoring
-                       |
-                  WireGuard VPN
-                       |
-                 [Local PC Node]
-              RTX 4090 GPU workloads
-             Ollama (LLM inference)
-           Immich/PhotoPrism (testing)
-              TTS/STT (if GPU needed)
-                       |
-                  WireGuard VPN
-                       |
-                 [Client Devices]
+                [Gateway Node]
+           WireGuard Hub + Traefik
+           CoreDNS + Authentik (SSO)
+         Dolibarr, n8n, Postiz, Seafile
+       Meilisearch, SearXNG, Uptime Kuma
+       LiteLLM (API router), Open WebUI
+            mem0, OpenClaw
+               |         |
+          WireGuard    WireGuard
+          VPN          VPN
+               |         |
+       [Compute Node]  [Client Devices]
+        GPU workloads   laptops, phones
+        Ollama (LLM)
+        TTS/STT
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
+See [AGENTS.md](AGENTS.md) for detailed architecture, networking, and node
+assignments.
 
 ## Requirements
 

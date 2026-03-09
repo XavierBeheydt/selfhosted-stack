@@ -13,31 +13,177 @@ default, Docker compatible) with deployment scripts for multi-node environments.
 Nodes communicate securely over a **WireGuard** hub-spoke VPN, with **Traefik**
 as reverse proxy and **CoreDNS** for dynamic service DNS.
 
-## Architecture
-
-Two physical nodes connected via WireGuard (hub-spoke, VPS as hub):
-
-- **VPS** (Ubuntu) -- public-facing: Traefik, CoreDNS, WireGuard (wg-easy),
-  Authentik, Dolibarr, n8n, Postiz, Seafile, SearXNG, Meilisearch, Uptime Kuma
-- **Local PC** (Archlinux, RTX 4090) -- GPU workloads: Ollama, Open WebUI,
-  LiteLLM, mem0, OpenClaw, TTS, STT, Immich/PhotoPrism (testing)
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for network topology and
-detailed deployment mapping.
-
 ## Key Files
 
 | File | Purpose |
 | :--- | :------ |
 | [README.md](README.md) | Project overview and quickstart |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Network topology, node mapping, DNS |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Phased plan with progress |
 | [justfile](justfile) | Task runner recipes |
 | [.env.example](.env.example) | Global environment template |
-| [deploy/inventory.yml](deploy/inventory.yml) | Node inventory (VPS + local) |
+| [deploy/inventory.yml](deploy/inventory.yml) | Node inventory |
 | [deploy/deploy.sh](deploy/deploy.sh) | SSH-based deployment script |
 | [.github/workflows/ci.yml](.github/workflows/ci.yml) | CI pipeline |
 | [.github/workflows/deploy.yml](.github/workflows/deploy.yml) | CD pipeline |
+
+## Architecture
+
+### Network Topology
+
+Two nodes connected via WireGuard hub-spoke VPN. The **Gateway** is the entry
+point and WireGuard hub. The **Compute** node provides GPU for LLM inference
+and heavy ML workloads. All services are container-based (Podman/Docker
+Compose) with Traefik as the shared reverse proxy.
+
+```
+                        Internet
+                           |
+              +------------+------------+
+              |      Gateway Node       |
+              |   WireGuard Hub + DNS   |
+              |   Traefik (proxy)       |
+              |   Authentik (SSO)       |
+              |   Dolibarr, n8n, Postiz |
+              |   Seafile, SearXNG      |
+              |   Meilisearch           |
+              |   Uptime Kuma           |
+              |   LiteLLM, Open WebUI   |
+              |   mem0, OpenClaw        |
+              +---+-----------------+---+
+                  |                 |
+           WireGuard VPN     WireGuard VPN
+                  |                 |
+    +-------------+---+    +-------+-----------+
+    |  Compute Node   |    |  Client Devices   |
+    |  GPU workloads  |    |  laptops, phones  |
+    |                 |    +-------------------+
+    |  Ollama (LLM)   |
+    |  TTS / STT      |
+    |  Immich (test)   |
+    |  PhotoPrism (test)|
+    +-----------------+
+```
+
+Both Compute and Client devices are **spokes** connecting directly to the
+Gateway hub. Clients never route through Compute.
+
+### Node Assignments
+
+#### Gateway Node
+
+The entry point. All user-facing services run here, proxied through Traefik.
+Also serves as the WireGuard hub and DNS authority.
+
+| Stack | Category | Purpose |
+| :---- | :------- | :------ |
+| traefik | core | Reverse proxy, TLS termination, routing |
+| dns | core | CoreDNS + DNSZoner (dynamic DNS, DNSSEC, DoT) |
+| wireguard | core | WireGuard VPN gateway (wg-easy), hub-spoke |
+| authentik | core | SSO/OIDC identity provider |
+| monitoring | core | Uptime Kuma status monitoring |
+| dolibarr | business | ERP/CRM |
+| n8n | business | Workflow automation |
+| postiz | business | AI social media management |
+| searxng | search | Privacy-first meta-search engine |
+| meilisearch | search | Federated internal search |
+| seafile | storage | File sync and share |
+| litellm | ai | LLM API router/aggregator |
+| open-webui | ai | LLM chat UI with RAG |
+| mem0 | ai | Persistent AI memory layer |
+| openclaw | ai | Personal AI coding agent |
+
+#### Compute Node (GPU)
+
+GPU-heavy workloads, accessible from the Gateway (and all clients) via
+WireGuard VPN.
+
+| Stack | Category | Purpose |
+| :---- | :------- | :------ |
+| ollama | ai | LLM inference (NVIDIA GPU) |
+| tts | ai | Text-to-speech (GPU acceleration) |
+| stt | ai | Speech-to-text (GPU acceleration) |
+| immich | storage | Photo management with ML (testing) |
+| photoprism | storage | Photo management with AI (testing) |
+
+### Networking
+
+#### WireGuard VPN (Hub-Spoke)
+
+```
+Topology:  Gateway (hub) <--> Compute (spoke)
+                         <--> Client devices (spokes)
+
+Subnet:    10.13.13.0/24
+Hub IP:    10.13.13.1 (Gateway)
+DNS:       10.13.13.1 (CoreDNS on Gateway)
+```
+
+- **Hub-spoke model**: All peers connect to the Gateway. The Gateway routes
+  traffic between peers when needed.
+- **wg-easy**: Provides a web UI for peer management at `vpn.${BASE_DOMAIN}`.
+- All traffic between nodes is encrypted via WireGuard.
+
+#### Proxy Network
+
+A shared external network named `proxy` connects Traefik to all services
+that need HTTP routing. Each stack also defines its own internal network
+(`<name>-internal`) for inter-service communication (e.g., app to database).
+
+#### DNS (CoreDNS + DNSZoner)
+
+CoreDNS runs on the Gateway and serves as the authoritative DNS for all
+services. The DNSZoner sidecar watches container labels and dynamically
+generates DNS records, so services are automatically resolvable by name.
+
+- **DNSSEC**: Signed zones for integrity
+- **DoT forwarding**: Upstream queries use DNS-over-TLS
+- Clients on WireGuard use `10.13.13.1` as their DNS server
+
+### AI Routing
+
+```
+         +---------------------+
+         |      LiteLLM        |
+         |  (API Router)       |
+         +---+------+------+---+
+             |      |      |
+         +---+--+ +-+---+ ++------+
+         |Ollama| |Cloud| |OpenAI |
+         |(GPU) | | LLM | |etc.   |
+         +------+ +-----+ +-------+
+```
+
+- **LiteLLM** acts as a unified OpenAI-compatible API gateway. All AI
+  consumers (Open WebUI, OpenClaw, n8n) connect to LiteLLM.
+- **Ollama** runs on the Compute node with GPU. LiteLLM routes local model
+  requests to Ollama over WireGuard.
+- **mem0** provides persistent per-user memory, shared across Open WebUI,
+  OpenClaw, and other AI tools.
+- **SearXNG** provides web search results to Open WebUI RAG pipelines
+  (not used for internal data search -- that's Meilisearch).
+
+### Authentication
+
+Authentik provides centralized SSO for all user-facing services:
+
+- **OIDC**: Native integration for services that support OpenID Connect
+  (Open WebUI, n8n, Seafile, etc.)
+- **LDAP**: For services that need directory-based auth
+- **Traefik forward-auth**: Catch-all for services without native SSO support
+
+### Deployment
+
+Deployment is SSH-based, using `deploy/deploy.sh` or the GitHub Actions CD
+pipeline. Each node pulls the latest repo and runs `compose up -d` for its
+assigned stacks.
+
+```bash
+# Use just recipes
+just gateway-up    # Start all Gateway stacks
+just compute-up    # Start all Compute stacks
+```
+
+See `deploy/inventory.yml` for the full node-to-stack mapping.
 
 ## Stack Structure Convention
 
@@ -113,5 +259,5 @@ CONTAINER_ENGINE=docker just <recipe>
 - Authentik provides centralized SSO (OIDC/LDAP) for all user-facing services
 - Meilisearch provides federated internal search (Dolibarr, Seafile, photos)
 - SearXNG handles web meta-search only (privacy-first, not internal data)
-- WireGuard uses hub-spoke topology (VPS as hub, all devices connect to VPS)
+- WireGuard uses hub-spoke topology (Gateway as hub, all devices connect to Gateway)
 - System is entirely private -- accessible only via WireGuard
