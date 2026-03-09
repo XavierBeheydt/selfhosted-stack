@@ -1,0 +1,36 @@
+name: meilisearch
+
+services:
+  app:
+    image: getmeili/meilisearch:latest
+    container_name: meilisearch
+    restart: unless-stopped
+    volumes:
+      - meilisearch-data:/meili_data
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:?MEILI_MASTER_KEY required}
+      MEILI_ENV: production
+      MEILI_NO_ANALYTICS: "true"
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:7700/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.meilisearch.rule: "Host(`search.${BASE_DOMAIN:?BASE_DOMAIN required}`)"
+      traefik.http.routers.meilisearch.entrypoints: websecure
+      traefik.http.routers.meilisearch.tls.certresolver: letsencrypt
+      traefik.http.services.meilisearch.loadbalancer.server.port: "7700"
+      dnszoner.enable: "true"
+      dnszoner.domain: "search.${BASE_DOMAIN}"
+
+volumes:
+  meilisearch-data:
+
+networks:
+  proxy:
+    external: true

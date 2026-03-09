@@ -1,0 +1,54 @@
+use_default_settings: true
+
+general:
+  instance_name: "SearXNG"
+  debug: false
+
+search:
+  safe_search: 0
+  autocomplete: "duckduckgo"
+  default_lang: "en"
+
+server:
+  secret_key: "changeme"
+  image_proxy: true
+  method: "GET"
+
+ui:
+  static_use_hash: true
+  default_theme: "simple"
+  results_on_new_tab: true
+
+engines:
+  # Privacy engines (enabled by default)
+  - name: duckduckgo
+    engine: duckduckgo
+    disabled: false
+  - name: brave
+    engine: brave
+    disabled: false
+  - name: startpage
+    engine: startpage
+    disabled: false
+  - name: mojeek
+    engine: mojeek
+    disabled: false
+
+  # Major engines (disabled by default, enable if needed)
+  - name: google
+    engine: google
+    disabled: true
+  - name: bing
+    engine: bing
+    disabled: true
+
+  # Specialized
+  - name: wikipedia
+    engine: wikipedia
+    disabled: false
+  - name: github
+    engine: github
+    disabled: false
+  - name: arxiv
+    engine: arxiv
+    disabled: false

@@ -1,0 +1,75 @@
+name: seafile
+
+services:
+  app:
+    image: seafileltd/seafile-mc:latest
+    container_name: seafile
+    restart: unless-stopped
+    volumes:
+      - seafile-data:/shared
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      DB_HOST: db
+      DB_ROOT_PASSWD: ${SEAFILE_DB_ROOT_PASSWORD:?SEAFILE_DB_ROOT_PASSWORD required}
+      SEAFILE_ADMIN_EMAIL: ${SEAFILE_ADMIN_EMAIL:?SEAFILE_ADMIN_EMAIL required}
+      SEAFILE_ADMIN_PASSWORD: ${SEAFILE_ADMIN_PASSWORD:?SEAFILE_ADMIN_PASSWORD required}
+      SEAFILE_SERVER_HOSTNAME: "files.${BASE_DOMAIN:?BASE_DOMAIN required}"
+      SEAFILE_SERVER_LETSENCRYPT: "false"
+    networks:
+      - proxy
+      - seafile-internal
+    depends_on:
+      db:
+        condition: service_healthy
+      memcached:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.seafile.rule: "Host(`files.${BASE_DOMAIN}`)"
+      traefik.http.routers.seafile.entrypoints: websecure
+      traefik.http.routers.seafile.tls.certresolver: letsencrypt
+      traefik.http.services.seafile.loadbalancer.server.port: "80"
+      dnszoner.enable: "true"
+      dnszoner.domain: "files.${BASE_DOMAIN}"
+
+  db:
+    image: mariadb:lts
+    container_name: seafile-db
+    restart: unless-stopped
+    command: --character_set_client=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - seafile-db:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${SEAFILE_DB_ROOT_PASSWORD:?SEAFILE_DB_ROOT_PASSWORD required}
+      MYSQL_LOG_CONSOLE: "true"
+    networks:
+      - seafile-internal
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  memcached:
+    image: memcached:1-alpine
+    container_name: seafile-memcached
+    restart: unless-stopped
+    entrypoint: memcached -m 256
+    networks:
+      - seafile-internal
+
+volumes:
+  seafile-data:
+  seafile-db:
+
+networks:
+  proxy:
+    external: true
+  seafile-internal:
+    driver: bridge
