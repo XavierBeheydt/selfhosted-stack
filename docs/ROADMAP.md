@@ -46,8 +46,8 @@ Progress tracker for the selfhosted-stack rework (Compose-based architecture).
 ### Phase 6 -- Tooling
 
 - [x] `justfile` -- task runner with per-service recipes, node groups, validation
-- [x] `deploy/deploy.sh` -- SSH-based deployment script
-- [x] `deploy/inventory.yml` -- node inventory (Gateway + Compute)
+- [x] `scripts/deploy.sh` -- SSH-based deployment script
+- [x] `stack-inventory.yml` -- node inventory (Gateway + Compute)
 
 
 ### Phase 7 -- CI/CD

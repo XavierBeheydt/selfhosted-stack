@@ -21,8 +21,8 @@ as reverse proxy and **CoreDNS** for dynamic service DNS.
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Phased plan with progress |
 | [justfile](justfile) | Task runner recipes |
 | [.env.example](.env.example) | Global environment template |
-| [deploy/inventory.yml](deploy/inventory.yml) | Node inventory |
-| [deploy/deploy.sh](deploy/deploy.sh) | SSH-based deployment script |
+| [stack-inventory.yml](stack-inventory.yml) | Node inventory |
+| [scripts/deploy.sh](scripts/deploy.sh) | SSH-based deployment script |
 | [.github/workflows/ci.yml](.github/workflows/ci.yml) | CI pipeline |
 | [.github/workflows/deploy.yml](.github/workflows/deploy.yml) | CD pipeline |
 
@@ -173,7 +173,7 @@ Authentik provides centralized SSO for all user-facing services:
 
 ### Deployment
 
-Deployment is SSH-based, using `deploy/deploy.sh` or the GitHub Actions CD
+Deployment is SSH-based, using `scripts/deploy.sh` or the GitHub Actions CD
 pipeline. Each node pulls the latest repo and runs `compose up -d` for its
 assigned stacks.
 
@@ -183,7 +183,7 @@ just gateway-up    # Start all Gateway stacks
 just compute-up    # Start all Compute stacks
 ```
 
-See `deploy/inventory.yml` for the full node-to-stack mapping.
+See `stack-inventory.yml` for the full node-to-stack mapping.
 
 ## Stack Structure Convention
 
