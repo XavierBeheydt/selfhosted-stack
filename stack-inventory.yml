@@ -2,7 +2,7 @@
 # List of servers and which stacks to deploy on each.
 #
 # Usage with deploy.sh:
-#   ./deploy/deploy.sh <host> <user> <deploy_path> [stacks...]
+#   ./scripts/deploy.sh <host> <user> <deploy_path> [stacks...]
 #
 # Stack paths are relative to stacks/ directory.
 

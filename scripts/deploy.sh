@@ -5,10 +5,10 @@
 # deploy.sh - Deploy stacks to remote servers via SSH
 #
 # Usage:
-#   ./deploy/deploy.sh <host> <user> <deploy_path> [stacks...]
+#   ./scripts/deploy.sh <host> <user> <deploy_path> [stacks...]
 #
 # Example:
-#   ./deploy/deploy.sh gateway.example.com deploy /opt/selfhosted-stack core/traefik core/dns
+#   ./scripts/deploy.sh gateway.example.com deploy /opt/selfhosted-stack core/traefik core/dns
 #
 # Environment variables:
 #   SSH_KEY_PATH  - Path to SSH private key (default: uses ssh-agent)
@@ -33,21 +33,21 @@ REPO_URL="${REPO_URL:-git@github.com:XavierBeheydt/selfhosted-stack.git}"
 # SSH options
 SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 -p ${SSH_PORT}"
 if [[ -n "${SSH_KEY_PATH:-}" ]]; then
-    SSH_OPTS="${SSH_OPTS} -i ${SSH_KEY_PATH}"
+	SSH_OPTS="${SSH_OPTS} -i ${SSH_KEY_PATH}"
 fi
 
 ssh_cmd() {
-    # shellcheck disable=SC2086
-    ssh ${SSH_OPTS} "${USER}@${HOST}" "$@"
+	# shellcheck disable=SC2086
+	ssh ${SSH_OPTS} "${USER}@${HOST}" "$@"
 }
 
 log() {
-    printf "[deploy] %s\n" "$*"
+	printf "[deploy] %s\n" "$*"
 }
 
 err() {
-    printf "[deploy] ERROR: %s\n" "$*" >&2
-    exit 1
+	printf "[deploy] ERROR: %s\n" "$*" >&2
+	exit 1
 }
 
 # --- Pre-flight checks ---
