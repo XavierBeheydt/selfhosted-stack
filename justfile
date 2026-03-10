@@ -28,6 +28,50 @@ network-cleanup:
 status:
     @{{container_engine}} ps --format "table {{{{.Names}}}}\t{{{{.Status}}}}\t{{{{.Ports}}}}"
 
+# Generate local TLS certificates using mkcert
+# Usage: just mkcert
+mkcert:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p certs
+    if ! command -v mkcert >/dev/null 2>&1; then
+        echo "mkcert not found; attempting to install..."
+        if command -v brew >/dev/null 2>&1; then
+            brew install mkcert
+        elif command -v apk >/dev/null 2>&1; then
+            sudo apk add --no-cache curl nss
+            os=$(uname -s | tr '[:upper:]' '[:lower:]')
+            arch=$(uname -m)
+            case "$arch" in
+                x86_64) arch=amd64 ;;
+                aarch64) arch=arm64 ;;
+            esac
+            curl -sSL "https://github.com/FiloSottile/mkcert/releases/latest/download/mkcert-${os}-${arch}" -o /tmp/mkcert
+            sudo install /tmp/mkcert /usr/local/bin/mkcert
+        elif [ -f /etc/debian_version ]; then
+            sudo apt-get update
+            sudo apt-get install -y libnss3-tools curl
+            os=$(uname -s | tr '[:upper:]' '[:lower:]')
+            arch=$(uname -m)
+            case "$arch" in
+                x86_64) arch=amd64 ;;
+                aarch64) arch=arm64 ;;
+            esac
+            curl -sSL "https://github.com/FiloSottile/mkcert/releases/latest/download/mkcert-${os}-${arch}" -o /tmp/mkcert
+            sudo install /tmp/mkcert /usr/local/bin/mkcert
+        elif command -v pacman >/dev/null 2>&1; then
+            sudo pacman -S --noconfirm mkcert nss
+        elif command -v dnf >/dev/null 2>&1; then
+            sudo dnf install -y mkcert nss-tools
+        else
+            echo "Automatic mkcert install not supported on this system. Visit https://github.com/FiloSottile/mkcert for manual installation." >&2
+            exit 1
+        fi
+    fi
+    mkcert -install || true
+    mkcert -cert-file certs/{{BASE_DOMAIN}}.crt -key-file certs/{{BASE_DOMAIN}}.key "{{BASE_DOMAIN}}"
+    echo "Created certs/{{BASE_DOMAIN}}.crt and certs/{{BASE_DOMAIN}}.key"
+
 # === Compose Helpers ========================================================
 
 # Generic: start a stack by path (e.g. just stack-up core/traefik)
