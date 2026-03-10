@@ -5,6 +5,7 @@
 *.key
 *.pem
 *.crt
+certs/
 
 # Certificates and ACME
 stacks/core/traefik/config/acme/

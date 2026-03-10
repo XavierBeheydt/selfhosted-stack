@@ -1,11 +1,5 @@
 # Dynamic TLS Configuration
 tls:
-  options:
-    default:
-      minVersion: VersionTLS12
-      sniStrict: true
-      cipherSuites:
-        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
-        - TLS_AES_256_GCM_SHA384
-        - TLS_CHACHA20_POLY1305_SHA256
+  certificates:
+    - certFile: /certs/local.crt
+      keyFile:  /certs/local.key
