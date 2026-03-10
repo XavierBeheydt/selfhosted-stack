@@ -9,7 +9,7 @@ Progress tracker for the selfhosted-stack rework (Compose-based architecture).
 - [x] `AGENTS.md` + `CLAUDE.md` symlink
 - [x] `README.md` with project overview and quickstart
 - [x] `.gitignore`, `.env.example`, `LICENSE` (MIT)
-- [x] `shared/networks.yml` (external `proxy` network)
+- [x] `stack-network.yml` (external `proxy` network)
 
 ### Phase 2 -- Core Stacks
 
