@@ -10,10 +10,11 @@
 }
 
 # DNS-over-TLS listener
+# Uses Quad9 DNS (9.9.9.9, 149.112.112.112) with IPv6 support (2620:fe::fe, 2620:fe::9)
 tls://.:853 {
   tls /etc/coredns/certs/cert.pem /etc/coredns/certs/key.pem
-  forward . tls://1.1.1.1 tls://1.0.0.1 {
-    tls_servername cloudflare-dns.com
+  forward . tls://9.9.9.9 tls://149.112.112.112 tls://2620:fe::fe tls://2620:fe::9 {
+    tls_servername dns.quad9.net
     health_check 30s
   }
   cache 300
@@ -21,11 +22,24 @@ tls://.:853 {
 }
 
 # Default forward (DNSSEC validated)
+# Uses Quad9 DNS (9.9.9.9, 149.112.112.112) with IPv6 support (2620:fe::fe, 2620:fe::9)
 . {
-  forward . tls://1.1.1.1 tls://1.0.0.1 {
-    tls_servername cloudflare-dns.com
+  fallthrough {
+    hosts {
+      /etc/coredns/hosts/hosts_{client_ip}.txt
+      /etc/coredns/hosts/hosts_base.txt
+    }
+  }
+  forward . tls://9.9.9.9 tls://149.112.112.112 tls://2620:fe::fe tls://2620:fe::9 {
+    tls_servername dns.quad9.net
     health_check 30s
   }
+  dnssec
+  cache 300
+  log
+  errors
+  health :8080
+}
   dnssec
   cache 300
   log

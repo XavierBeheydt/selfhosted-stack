@@ -13,6 +13,7 @@ services:
     volumes:
       - ./config/Corefile:/etc/coredns/Corefile:ro
       - dns-zones:/etc/coredns/zones
+      - ./hosts-filter/data:/etc/coredns/hosts
     networks:
       - proxy
       - internal
@@ -24,6 +25,8 @@ services:
     depends_on:
       dnszoner:
         condition: service_healthy
+      hosts-filter:
+        condition: service_started
 
   dnszoner:
     build:
@@ -43,6 +46,24 @@ services:
       - internal
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8053/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  hosts-filter:
+    build:
+      context: ./hosts-filter
+      dockerfile: Containerfile
+    container_name: hosts-filter
+    restart: unless-stopped
+    volumes:
+      - ./hosts-filter/data:/data
+    ports:
+      - "8000:8000"
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 5s
       retries: 3
