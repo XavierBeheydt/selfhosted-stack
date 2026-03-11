@@ -111,11 +111,8 @@ Compute) before running any deployment.
 ### 1. Create the user
 
 ```bash
-# Create a system-level deploy user with no login shell and no password
+# Create a system-level deploy user with no login shell, no password, no home
 sudo useradd --system --no-create-home --shell /usr/sbin/nologin deploy
-# OR, if you prefer a home directory for SSH keys:
-sudo useradd --create-home --shell /bin/bash deploy
-sudo passwd -l deploy          # lock password-based login
 ```
 
 ### 2. Configure SSH access (key-only)
@@ -124,17 +121,15 @@ sudo passwd -l deploy          # lock password-based login
 # On your local machine – generate a dedicated deploy key (Ed25519, no passphrase)
 ssh-keygen -t ed25519 -C "deploy@selfhosted-stack" -f ~/.ssh/deploy_ed25519
 
-# Copy the public key to each node
-ssh-copy-id -i ~/.ssh/deploy_ed25519.pub <admin-user>@<node-host>
-# Then move it to the deploy user's authorized_keys:
-sudo mkdir -p /home/deploy/.ssh
-sudo tee -a /home/deploy/.ssh/authorized_keys < ~/.ssh/deploy_ed25519.pub
-sudo chmod 700 /home/deploy/.ssh
-sudo chmod 600 /home/deploy/.ssh/authorized_keys
-sudo chown -R deploy:deploy /home/deploy/.ssh
+# On each node – create the authorized_keys file outside of a home directory
+sudo mkdir -p /etc/ssh/authorized_keys
+sudo tee /etc/ssh/authorized_keys/deploy < ~/.ssh/deploy_ed25519.pub
+sudo chmod 755 /etc/ssh/authorized_keys
+sudo chmod 644 /etc/ssh/authorized_keys/deploy
+sudo chown root:root /etc/ssh/authorized_keys/deploy
 ```
 
-Restrict the key in `authorized_keys` to limit what the deploy user can do:
+Restrict the key in `authorized_keys/deploy` to limit what the deploy user can do:
 
 ```
 no-agent-forwarding,no-X11-forwarding,no-pty ssh-ed25519 AAAA... deploy@selfhosted-stack
@@ -148,7 +143,7 @@ In `/etc/ssh/sshd_config` (or a drop-in under `/etc/ssh/sshd_config.d/`):
 PermitRootLogin no
 PasswordAuthentication no
 PubkeyAuthentication yes
-AuthorizedKeysFile .ssh/authorized_keys
+AuthorizedKeysFile .ssh/authorized_keys /etc/ssh/authorized_keys/%u
 AllowUsers deploy <your-admin-user>
 ```
 
