@@ -1,0 +1,36 @@
+name: searxng
+
+services:
+  app:
+    image: searxng/searxng:latest
+    container_name: searxng
+    restart: unless-stopped
+    volumes:
+      - ./config/settings.yml:/etc/searxng/settings.yml:ro
+      - searxng-data:/etc/searxng
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?SEARXNG_SECRET required}
+      SEARXNG_BASE_URL: "https://sx.${BASE_DOMAIN:?BASE_DOMAIN required}"
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.searxng.rule: "Host(`sx.${BASE_DOMAIN}`)"
+      traefik.http.routers.searxng.entrypoints: websecure
+      traefik.http.routers.searxng.tls.certresolver: letsencrypt
+      traefik.http.services.searxng.loadbalancer.server.port: "8080"
+      dnszoner.enable: "true"
+      dnszoner.domain: "sx.${BASE_DOMAIN}"
+
+volumes:
+  searxng-data:
+
+networks:
+  proxy:
+    external: true

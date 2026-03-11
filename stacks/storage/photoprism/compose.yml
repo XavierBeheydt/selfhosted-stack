@@ -1,0 +1,74 @@
+name: photoprism
+
+services:
+  app:
+    image: photoprism/photoprism:latest
+    container_name: photoprism
+    restart: unless-stopped
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    volumes:
+      - photoprism-originals:/photoprism/originals
+      - photoprism-storage:/photoprism/storage
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      PHOTOPRISM_ADMIN_USER: ${PHOTOPRISM_ADMIN_USER:-admin}
+      PHOTOPRISM_ADMIN_PASSWORD: ${PHOTOPRISM_ADMIN_PASSWORD:?PHOTOPRISM_ADMIN_PASSWORD required}
+      PHOTOPRISM_SITE_URL: "https://photoprism.${BASE_DOMAIN:?BASE_DOMAIN required}"
+      PHOTOPRISM_DATABASE_DRIVER: mysql
+      PHOTOPRISM_DATABASE_SERVER: db:3306
+      PHOTOPRISM_DATABASE_NAME: ${PHOTOPRISM_DB_NAME:-photoprism}
+      PHOTOPRISM_DATABASE_USER: ${PHOTOPRISM_DB_USER:-photoprism}
+      PHOTOPRISM_DATABASE_PASSWORD: ${PHOTOPRISM_DB_PASSWORD:?PHOTOPRISM_DB_PASSWORD required}
+      PHOTOPRISM_ORIGINALS_LIMIT: 5000
+      PHOTOPRISM_DETECT_NSFW: "false"
+    networks:
+      - proxy
+      - internal
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:2342/api/v1/status || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.photoprism.rule: "Host(`photoprism.${BASE_DOMAIN}`)"
+      traefik.http.routers.photoprism.entrypoints: websecure
+      traefik.http.routers.photoprism.tls.certresolver: letsencrypt
+      traefik.http.services.photoprism.loadbalancer.server.port: "2342"
+
+  db:
+    image: mariadb:lts
+    container_name: photoprism-db
+    restart: unless-stopped
+    command: --innodb-buffer-pool-size=512M --transaction-isolation=READ-COMMITTED --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - photoprism-db:/var/lib/mysql
+    environment:
+      MARIADB_ROOT_PASSWORD: ${PHOTOPRISM_DB_ROOT_PASSWORD:?PHOTOPRISM_DB_ROOT_PASSWORD required}
+      MARIADB_DATABASE: ${PHOTOPRISM_DB_NAME:-photoprism}
+      MARIADB_USER: ${PHOTOPRISM_DB_USER:-photoprism}
+      MARIADB_PASSWORD: ${PHOTOPRISM_DB_PASSWORD:?PHOTOPRISM_DB_PASSWORD required}
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  photoprism-originals:
+  photoprism-storage:
+  photoprism-db:
+
+networks:
+  proxy:
+    external: true
+  internal:
+    driver: bridge

@@ -1,0 +1,166 @@
+# CI Pipeline - Tests, linting, and compose validation
+#
+# Runs on every push/PR to main.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+   # --- DNSZoner Python Tests ---
+  dnszoner-test:
+    name: DNSZoner Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: stacks/core/dns/dnszoner
+
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run linter (ruff)
+        run: uv run ruff check src/ tests/
+
+      - name: Check formatting (ruff)
+        run: uv run ruff format --check src/ tests/
+
+      - name: Run tests
+        run: uv run pytest
+
+  # --- HostsFilter Python Tests ---
+  hostsfilter-test:
+    name: HostsFilter Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: stacks/core/dns/hosts-filter
+
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: uv sync --group dev
+
+      - name: Run linter (ruff)
+        run: uv run ruff check src/ tests/
+
+      - name: Check formatting (ruff)
+        run: uv run ruff format --check src/ tests/
+
+      - name: Run tests
+        run: uv run pytest
+
+  # --- Compose file validation ---
+  compose-lint:
+    name: Validate Compose Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate all compose files
+        run: |
+          errors=0
+          for f in $(find stacks -name compose.yml -type f | sort); do
+            printf "Validating %s... " "$f"
+            if docker compose -f "$f" config --quiet 2>/dev/null; then
+              echo "OK"
+            else
+              echo "FAIL"
+              errors=$((errors + 1))
+            fi
+          done
+          if [ "$errors" -gt 0 ]; then
+            echo "::error::$errors compose file(s) failed validation"
+            exit 1
+          fi
+          echo "All compose files valid"
+        env:
+          # Global
+          CONTAINER_ENGINE_SOCKET: /var/run/docker.sock
+          BASE_DOMAIN: localhost
+          TZ: UTC
+          # Traefik
+          TRAEFIK_DASHBOARD_AUTH: "admin:test"
+          # WireGuard
+          WG_HOST: vpn.localhost
+          WG_PASSWORD_HASH: "test"
+          # Authentik
+          AUTHENTIK_SECRET_KEY: test-secret-key
+          AUTHENTIK_DB_PASSWORD: test
+          # Dolibarr
+          DOLI_DB_ROOT_PASSWORD: test
+          DOLI_DB_PASSWORD: test
+          DOLI_ADMIN_PASSWORD: test
+          # n8n (uses defaults)
+          # Postiz
+          POSTIZ_DB_PASSWORD: test
+          POSTIZ_JWT_SECRET: test-jwt-secret
+          # SearXNG
+          SEARXNG_SECRET: test-secret
+          # Meilisearch
+          MEILI_MASTER_KEY: test-master-key
+          # Seafile
+          SEAFILE_DB_ROOT_PASSWORD: test
+          SEAFILE_ADMIN_EMAIL: admin@test.com
+          SEAFILE_ADMIN_PASSWORD: test
+          # Immich
+          IMMICH_DB_PASSWORD: test
+          # PhotoPrism
+          PHOTOPRISM_ADMIN_PASSWORD: test
+          PHOTOPRISM_DB_PASSWORD: test
+          PHOTOPRISM_DB_ROOT_PASSWORD: test
+          # LiteLLM
+          LITELLM_MASTER_KEY: test-master-key
+          LITELLM_API_KEY: test-api-key
+          LITELLM_DB_PASSWORD: test
+          # Open WebUI
+          WEBUI_SECRET_KEY: test-secret-key
+
+  # --- Shell script linting ---
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run ShellCheck
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: .
+          severity: warning

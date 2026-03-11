@@ -1,0 +1,31 @@
+name: monitoring
+
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    restart: unless-stopped
+    volumes:
+      - uptime-kuma-data:/app/data
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"const http=require('http');const r=http.get('http://localhost:3001/api/health',s=>{process.exit(s.statusCode===200?0:1)});r.on('error',()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.monitoring.rule: "Host(`status.${BASE_DOMAIN:?BASE_DOMAIN required}`)"
+      traefik.http.routers.monitoring.entrypoints: websecure
+      traefik.http.routers.monitoring.tls.certresolver: letsencrypt
+      traefik.http.services.monitoring.loadbalancer.server.port: "3001"
+
+volumes:
+  uptime-kuma-data:
+
+networks:
+  proxy:
+    external: true

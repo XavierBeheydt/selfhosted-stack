@@ -1,0 +1,33 @@
+name: tts
+
+services:
+  app:
+    image: ghcr.io/matatonic/openedai-speech:latest
+    container_name: tts
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - tts-data:/app/voices
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+    networks:
+      - proxy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.tts.rule: "Host(`tts.${BASE_DOMAIN:?BASE_DOMAIN required}`)"
+      traefik.http.routers.tts.entrypoints: websecure
+      traefik.http.routers.tts.tls.certresolver: letsencrypt
+      traefik.http.services.tts.loadbalancer.server.port: "8000"
+
+volumes:
+  tts-data:
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,90 @@
+name: immich
+
+services:
+  server:
+    image: ghcr.io/immich-app/immich-server:release
+    container_name: immich-server
+    restart: unless-stopped
+    volumes:
+      - immich-upload:/usr/src/app/upload
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      DB_HOSTNAME: db
+      DB_USERNAME: ${IMMICH_DB_USER:-immich}
+      DB_PASSWORD: ${IMMICH_DB_PASSWORD:?IMMICH_DB_PASSWORD required}
+      DB_DATABASE_NAME: ${IMMICH_DB_NAME:-immich}
+      REDIS_HOSTNAME: redis
+    networks:
+      - proxy
+      - internal
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:2283/api/server/ping || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.immich.rule: "Host(`photos.${BASE_DOMAIN:?BASE_DOMAIN required}`)"
+      traefik.http.routers.immich.entrypoints: websecure
+      traefik.http.routers.immich.tls.certresolver: letsencrypt
+      traefik.http.services.immich.loadbalancer.server.port: "2283"
+
+  machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:release
+    container_name: immich-ml
+    restart: unless-stopped
+    volumes:
+      - immich-ml-cache:/cache
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:3003/ping\")'"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  db:
+    image: tensorchord/pgvecto-rs:pg16-v0.2.0
+    container_name: immich-db
+    restart: unless-stopped
+    volumes:
+      - immich-db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${IMMICH_DB_NAME:-immich}
+      POSTGRES_USER: ${IMMICH_DB_USER:-immich}
+      POSTGRES_PASSWORD: ${IMMICH_DB_PASSWORD:?IMMICH_DB_PASSWORD required}
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${IMMICH_DB_USER:-immich}"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: immich-redis
+    restart: unless-stopped
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  immich-upload:
+  immich-ml-cache:
+  immich-db:
+
+networks:
+  proxy:
+    external: true
+  internal:
+    driver: bridge

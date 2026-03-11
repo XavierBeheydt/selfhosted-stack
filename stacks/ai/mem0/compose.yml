@@ -1,0 +1,54 @@
+name: mem0
+
+services:
+  app:
+    image: mem0ai/mem0:latest
+    container_name: mem0
+    restart: unless-stopped
+    ports:
+      - "8070:8080"
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      MEM0_API_KEY: ${MEM0_API_KEY:-}
+      OPENAI_API_KEY: ${LITELLM_API_KEY:?LITELLM_API_KEY required}
+      OPENAI_API_BASE: "http://litellm:4000/v1"
+    networks:
+      - proxy
+      - internal
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.mem0.rule: "Host(`memory.${BASE_DOMAIN:?BASE_DOMAIN required}`)"
+      traefik.http.routers.mem0.entrypoints: websecure
+      traefik.http.routers.mem0.tls.certresolver: letsencrypt
+      traefik.http.services.mem0.loadbalancer.server.port: "8080"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: mem0-qdrant
+    restart: unless-stopped
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:6333/healthz || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  qdrant-data:
+
+networks:
+  proxy:
+    external: true
+  internal:
+    driver: bridge

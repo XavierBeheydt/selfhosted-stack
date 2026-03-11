@@ -1,0 +1,179 @@
+# CD Pipeline - Deploy to servers after CI passes
+#
+# Required GitHub Secrets:
+#   GATEWAY_HOST      - Gateway node hostname or IP
+#   DEPLOY_SSH_KEY    - SSH private key for deploy user
+#   SSH_PORT          - SSH port (optional, default: 22)
+#
+# Optional secrets (compute node via WireGuard):
+#   COMPUTE_HOST      - Compute node hostname/IP
+#   COMPUTE_SSH_KEY   - SSH key for compute node
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Deploy target"
+        required: true
+        default: "gateway"
+        type: choice
+        options:
+          - gateway
+          - compute
+          - all
+      stacks:
+        description: "Stacks to deploy (space-separated, empty = defaults)"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+# Only one deploy at a time per ref
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # --- Run CI first ---
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  # --- Deploy to Gateway ---
+  deploy-gateway:
+    name: Deploy to Gateway
+    needs: ci
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' &&
+       (github.event.inputs.target == 'gateway' || github.event.inputs.target == 'all'))
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Gateway
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.GATEWAY_HOST }}
+          username: deploy
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+
+            DEPLOY_PATH="/opt/selfhosted-stack"
+            BRANCH="main"
+            REPO="git@github.com:${{ github.repository }}.git"
+
+            cd "${DEPLOY_PATH}" || { mkdir -p "${DEPLOY_PATH}" && cd "${DEPLOY_PATH}"; }
+
+            if [ -d .git ]; then
+              git fetch origin
+              git checkout ${BRANCH}
+              git reset --hard origin/${BRANCH}
+              git clean -fd
+            else
+              git clone --branch ${BRANCH} "${REPO}" .
+            fi
+
+            # Detect container engine
+            if command -v podman &>/dev/null; then
+              ENGINE="podman"
+            else
+              ENGINE="docker"
+            fi
+
+            # Ensure shared network
+            ${ENGINE} network create proxy 2>/dev/null || true
+
+            # Determine stacks
+            STACKS="${{ github.event.inputs.stacks }}"
+            if [ -z "${STACKS}" ]; then
+              STACKS="core/traefik core/dns core/wireguard core/authentik core/monitoring business/dolibarr business/n8n business/postiz search/searxng search/meilisearch storage/seafile"
+            fi
+
+            for stack in ${STACKS}; do
+              compose_file="stacks/${stack}/compose.yml"
+              if [ -f "${compose_file}" ]; then
+                echo "Deploying ${stack}..."
+                ${ENGINE} compose -f "${compose_file}" pull 2>/dev/null || true
+                ${ENGINE} compose -f "${compose_file}" up -d --remove-orphans
+                echo "${stack} deployed"
+              else
+                echo "WARNING: ${compose_file} not found, skipping"
+              fi
+            done
+
+            echo "Gateway deployment complete"
+
+  # --- Deploy to Compute Node (GPU, via WireGuard) ---
+  deploy-compute:
+    name: Deploy to Compute
+    needs: ci
+    runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      (github.event.inputs.target == 'compute' || github.event.inputs.target == 'all')
+    environment: compute
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Compute Node
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.COMPUTE_HOST }}
+          username: deploy
+          key: ${{ secrets.COMPUTE_SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 10m
+          script: |
+            set -euo pipefail
+
+            DEPLOY_PATH="/opt/selfhosted-stack"
+            BRANCH="main"
+            REPO="git@github.com:${{ github.repository }}.git"
+
+            cd "${DEPLOY_PATH}" || { mkdir -p "${DEPLOY_PATH}" && cd "${DEPLOY_PATH}"; }
+
+            if [ -d .git ]; then
+              git fetch origin
+              git checkout ${BRANCH}
+              git reset --hard origin/${BRANCH}
+              git clean -fd
+            else
+              git clone --branch ${BRANCH} "${REPO}" .
+            fi
+
+            if command -v podman &>/dev/null; then
+              ENGINE="podman"
+            else
+              ENGINE="docker"
+            fi
+
+            ${ENGINE} network create proxy 2>/dev/null || true
+
+            STACKS="${{ github.event.inputs.stacks }}"
+            if [ -z "${STACKS}" ]; then
+              STACKS="ai/ollama ai/litellm ai/open-webui ai/mem0 ai/openclaw ai/tts ai/stt"
+            fi
+
+            for stack in ${STACKS}; do
+              compose_file="stacks/${stack}/compose.yml"
+              if [ -f "${compose_file}" ]; then
+                echo "Deploying ${stack}..."
+                ${ENGINE} compose -f "${compose_file}" pull 2>/dev/null || true
+                ${ENGINE} compose -f "${compose_file}" up -d --remove-orphans
+                echo "${stack} deployed"
+              fi
+            done
+
+            echo "Compute deployment complete"

@@ -1,0 +1,51 @@
+# Deploy Inventory
+# List of servers and which stacks to deploy on each.
+#
+# Usage with deploy.sh:
+#   ./scripts/deploy.sh <host> <user> <deploy_path> [stacks...]
+#
+# Stack paths are relative to stacks/ directory.
+
+servers:
+  # Gateway node - entry point, runs all public-facing services
+  gateway:
+    host: "${GATEWAY_HOST}"
+    user: deploy
+    port: 22
+    deploy_path: /opt/selfhosted-stack
+    stacks:
+      # Core
+      - core/traefik
+      - core/dns
+      - core/wireguard
+      - core/authentik
+      - core/monitoring
+      # Business
+      - business/dolibarr
+      - business/n8n
+      - business/postiz
+      # Search
+      - search/searxng
+      - search/meilisearch
+      # Storage
+      - storage/seafile
+
+  # Compute node (GPU) - inference and ML workloads
+  # Accessible from Gateway via WireGuard hub-spoke VPN
+  compute:
+    host: "${COMPUTE_HOST}"
+    user: deploy
+    port: 22
+    deploy_path: /opt/selfhosted-stack
+    stacks:
+      # AI (GPU)
+      - ai/ollama
+      - ai/litellm
+      - ai/open-webui
+      - ai/mem0
+      - ai/openclaw
+      - ai/tts
+      - ai/stt
+      # Storage (testing / optional)
+      # - storage/immich
+      # - storage/photoprism

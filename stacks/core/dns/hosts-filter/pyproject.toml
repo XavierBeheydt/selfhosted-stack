@@ -1,0 +1,47 @@
+[project]
+name = "hostsfilter"
+version = "0.1.0"
+description = "Dynamic hosts file generator for DNS filtering based on source IP"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.111.0",
+    "uvicorn>=0.30.1",
+    "requests>=2.32.0",
+    "python-multipart>=0.0.9",
+]
+
+[project.scripts]
+hostsfilter = "hostsfilter.main:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.15.1",
+]
+
+[tool.pytest.ini_options]
+addopts = "-ra -q --cov=hostsfilter --cov-report=term-missing"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+exclude = [
+    ".venv", "venv", "__pycache__", "build", "dist",
+    "*.egg-info", ".pytest_cache", ".ruff_cache",
+]
+line-length = 80
+indent-width = 4
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
