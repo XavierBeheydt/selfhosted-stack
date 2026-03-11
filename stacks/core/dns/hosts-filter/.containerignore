@@ -1,0 +1,33 @@
+# Ignore files for container build
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+
+# Development
+.tests/
+.coverage
+.pytest_cache/
+
+# Build artifacts
+build/
+dist/
+
+# Editor
+.vscode/
+.idea/
+
+# Environment files
+.env
+.env.*
+
+# Lock files (keep uv.lock)
+!uv.lock
+
+# Data directory
+!data/
